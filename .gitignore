@@ -56,3 +56,6 @@ build/
 # virtual machine crash logs
 hs_err_pid*
 replay_pid*
+
+# H2 file database
+/data/

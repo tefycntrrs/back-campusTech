@@ -1,5 +1,6 @@
 package com.uade.ecommerce.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -20,4 +21,14 @@ public class Producto {
     private String descripcion;
     private Double precio;
     private Integer stock;
+
+    //El optional = false significa que el producto debe tener una categoria, si no, no se puede crear el producto.
+    @JsonIgnore
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "categoria_id", nullable = false)
+    private Categoria categoria;
+
+    public Long getCategoriaId() {
+        return categoria != null ? categoria.getId() : null;
+    }
 }
