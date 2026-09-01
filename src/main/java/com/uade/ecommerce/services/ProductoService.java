@@ -1,5 +1,6 @@
 package com.uade.ecommerce.services;
 
+import com.uade.ecommerce.dto.CreateProductoRequest;
 import com.uade.ecommerce.exception.CategoriaNotFoundException;
 import com.uade.ecommerce.exception.MarcaNotFoundException;
 import com.uade.ecommerce.model.Categoria;
@@ -9,7 +10,9 @@ import com.uade.ecommerce.repository.CategoriaRepository;
 import com.uade.ecommerce.repository.MarcaRepository;
 import com.uade.ecommerce.repository.ProductoRepository;
 import jakarta.transaction.Transactional;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -35,31 +38,50 @@ public class ProductoService {
         return productoRepository.findAll();
     }
 
-    public Producto createProducto(Producto producto) {
+    public List<Producto> getProductosByCategoria(Long categoriaId) {
 
-        if (producto.getCategoria() == null ||
-                producto.getCategoria().getId() == null) {
-            throw new RuntimeException("La categoría es obligatoria");
+        if (!categoriaRepository.existsById(categoriaId)) {
+            throw new CategoriaNotFoundException(categoriaId);
         }
 
-        Long categoriaId = producto.getCategoria().getId();
+        return productoRepository.findByCategoriaId(categoriaId);
+    }
+
+    public Producto createProducto(CreateProductoRequest request) {
+
+        if (request.getCategoriaId() == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "La categoría es obligatoria"
+            );
+        }
 
         Categoria categoria = categoriaRepository
-                .findById(categoriaId)
+                .findById(request.getCategoriaId())
                 .orElseThrow(() ->
-                        new CategoriaNotFoundException(categoriaId));
+                        new CategoriaNotFoundException(request.getCategoriaId())
+                );
 
-        if (producto.getMarca() == null ||
-                producto.getMarca().getId() == null) {
-            throw new RuntimeException("La marca es obligatoria");
+        if (request.getMarcaId() == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "La marca es obligatoria"
+            );
         }
 
-        Long marcaId = producto.getMarca().getId();
-
         Marca marca = marcaRepository
-                .findById(marcaId)
+                .findById(request.getMarcaId())
                 .orElseThrow(() ->
-                        new MarcaNotFoundException(marcaId));
+                        new MarcaNotFoundException(request.getMarcaId())
+                );
+
+        Producto producto = new Producto();
+
+        producto.setNombre(request.getNombre());
+        producto.setDescripcion(request.getDescripcion());
+        producto.setPrecio(request.getPrecio());
+        producto.setStock(request.getStock());
+        producto.setSku(request.getSku());
 
         producto.setCategoria(categoria);
         producto.setMarca(marca);

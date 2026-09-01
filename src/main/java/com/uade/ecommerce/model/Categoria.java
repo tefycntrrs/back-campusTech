@@ -1,9 +1,15 @@
 package com.uade.ecommerce.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -24,6 +30,12 @@ public class Categoria {
 
     @Column(nullable = false)
     private Boolean activo = true;
+
+    @OneToMany(mappedBy = "categoria")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @JsonIgnore
+    private List<Producto> productos = new ArrayList<>();
 
     @PrePersist
     public void prePersist() {

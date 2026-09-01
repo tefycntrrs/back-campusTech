@@ -1,5 +1,6 @@
 package com.uade.ecommerce.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -37,11 +38,12 @@ public class Producto {
     @Column(nullable = false)
     private Boolean activo = true;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "categoria_id", nullable = false)
     private Categoria categoria;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "marca_id", nullable = false)
     private Marca marca;
 
@@ -50,6 +52,10 @@ public class Producto {
 
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+
+    public Long getCategoriaId() {
+        return categoria != null ? categoria.getId() : null;
+    }
 
     @PrePersist
     public void prePersist() {
