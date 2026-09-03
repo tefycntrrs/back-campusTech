@@ -1,5 +1,6 @@
 package com.uade.ecommerce.services;
 
+import com.uade.ecommerce.exception.CategoriaNotFoundException;
 import com.uade.ecommerce.model.Categoria;
 import com.uade.ecommerce.repository.CategoriaRepository;
 import jakarta.transaction.Transactional;
@@ -25,12 +26,7 @@ public class CategoriaService {
 
     public Categoria getCategoriaById(Long id) {
         return categoriaRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResponseStatusException(
-                                HttpStatus.NOT_FOUND,
-                                "La categoría no existe"
-                        )
-                );
+                .orElseThrow(() -> new CategoriaNotFoundException(id));
     }
 
     public Categoria createCategoria(Categoria categoria) {
@@ -51,6 +47,35 @@ public class CategoriaService {
         }
 
         categoria.setNombre(nombre);
+        return categoriaRepository.save(categoria);
+    }
+
+    public Categoria updateCategoria(Long id, Categoria request) {
+        Categoria categoria = getCategoriaById(id);
+
+        if (request.getNombre() == null || request.getNombre().isBlank()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "El nombre de la categoría es obligatorio"
+            );
+        }
+
+        String nombre = request.getNombre().trim();
+
+        if (categoriaRepository.existsByNombreIgnoreCaseAndIdNot(nombre, id)) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "La categoría ya existe"
+            );
+        }
+
+        categoria.setNombre(nombre);
+        categoria.setDescripcion(request.getDescripcion());
+
+        if (request.getActivo() != null) {
+            categoria.setActivo(request.getActivo());
+        }
+
         return categoriaRepository.save(categoria);
     }
 }

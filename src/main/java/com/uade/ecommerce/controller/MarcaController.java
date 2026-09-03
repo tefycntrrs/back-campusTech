@@ -25,4 +25,9 @@ public class MarcaController {
     public Marca createMarca(@RequestBody Marca marca) {
         return marcaService.createMarca(marca);
     }
+
+    @PutMapping("/{id}")
+    public Marca updateMarca(@PathVariable Long id, @RequestBody Marca marca) {
+        return marcaService.updateMarca(id, marca);
+    }
 }

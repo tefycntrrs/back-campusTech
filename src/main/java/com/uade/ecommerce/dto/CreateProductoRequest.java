@@ -13,6 +13,7 @@ public class CreateProductoRequest {
     private BigDecimal precio;
     private Integer stock;
     private String sku;
+    private Boolean activo;
     private Long categoriaId;
     private Long marcaId;
 }

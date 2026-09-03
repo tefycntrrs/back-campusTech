@@ -2,15 +2,15 @@
 
 API REST de ecommerce de productos tecnológicos (Fase 1). Base URL: `http://localhost:8081`
 
-Los productos siempre pertenecen a una categoría. Primero hay que crear la categoría y después el producto con su `categoriaId`. En las respuestas, el producto solo trae ese id; el detalle de la categoría se consulta por `/api/categorias/{id}`.
+Base de datos: **MySQL** (credenciales por variables de entorno `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`).
+
+Los productos pertenecen a una **categoría** y a una **marca**. Primero hay que crear categoría y marca; después el producto con `categoriaId` y `marcaId`. En las respuestas, el producto expone `categoriaId` y el objeto `marca`.
 
 ---
 
 ## Categorías
 
 ### Listar categorías
-
-Devuelve todas las categorías. No espera body.
 
 `GET /api/categorias`
 
@@ -21,17 +21,8 @@ Devuelve todas las categorías. No espera body.
   {
     "id": 1,
     "nombre": "Notebooks",
-    "descripcion": "Laptops para trabajo, estudio y gaming"
-  },
-  {
-    "id": 2,
-    "nombre": "Smartphones",
-    "descripcion": "Celulares y accesorios móviles"
-  },
-  {
-    "id": 3,
-    "nombre": "Periféricos",
-    "descripcion": "Auriculares, teclados, mouse y webcams"
+    "descripcion": "Laptops para trabajo, estudio y gaming",
+    "activo": true
   }
 ]
 ```
@@ -40,11 +31,9 @@ Devuelve todas las categorías. No espera body.
 
 ### Obtener una categoría
 
-Trae una categoría por `id`. Si no existe, responde **404**.
-
 `GET /api/categorias/{id}`
 
-Ejemplo: `GET /api/categorias/1`
+Si no existe → **404**.
 
 **Respuesta 200**
 
@@ -52,15 +41,14 @@ Ejemplo: `GET /api/categorias/1`
 {
   "id": 1,
   "nombre": "Notebooks",
-  "descripcion": "Laptops para trabajo, estudio y gaming"
+  "descripcion": "Laptops para trabajo, estudio y gaming",
+  "activo": true
 }
 ```
 
 ---
 
 ### Crear una categoría
-
-Da de alta una categoría. El `id` lo asigna la base; no hace falta mandarlo.
 
 `POST /api/categorias`
 
@@ -79,23 +67,8 @@ Da de alta una categoría. El `id` lo asigna la base; no hace falta mandarlo.
 {
   "id": 1,
   "nombre": "Notebooks",
-  "descripcion": "Laptops para trabajo, estudio y gaming"
-}
-```
-
-Otros ejemplos de body:
-
-```json
-{
-  "nombre": "Smartphones",
-  "descripcion": "Celulares y accesorios móviles"
-}
-```
-
-```json
-{
-  "nombre": "Periféricos",
-  "descripcion": "Auriculares, teclados, mouse y webcams"
+  "descripcion": "Laptops para trabajo, estudio y gaming",
+  "activo": true
 }
 ```
 
@@ -106,17 +79,44 @@ Otros ejemplos de body:
 | Falta el nombre | 400 | El nombre de la categoría es obligatorio |
 | El nombre ya existe | 409 | La categoría ya existe |
 
-El nombre se compara sin importar mayúsculas/minúsculas (`Notebooks` y `notebooks` se consideran la misma).
+El nombre se compara sin importar mayúsculas/minúsculas.
+
+---
+
+### Actualizar una categoría
+
+`PUT /api/categorias/{id}`
+
+**Body**
+
+```json
+{
+  "nombre": "Notebooks y Ultrabooks",
+  "descripcion": "Laptops para trabajo, estudio y gaming",
+  "activo": true
+}
+```
+
+**Respuesta 200**
+
+```json
+{
+  "id": 1,
+  "nombre": "Notebooks y Ultrabooks",
+  "descripcion": "Laptops para trabajo, estudio y gaming",
+  "activo": true
+}
+```
+
+Si el id no existe → **404**. Si el nombre ya lo usa otra categoría → **409**.
 
 ---
 
 ### Listar productos de una categoría
 
-Devuelve los productos de esa categoría. Si el `id` no existe, responde **404**.
-
 `GET /api/categorias/{id}/productos`
 
-Ejemplo: `GET /api/categorias/1/productos`
+Si la categoría no existe → **404**.
 
 **Respuesta 200**
 
@@ -126,16 +126,17 @@ Ejemplo: `GET /api/categorias/1/productos`
     "id": 1,
     "nombre": "MacBook Air 13 M3",
     "descripcion": "Chip M3, 16 GB RAM, 512 GB SSD",
-    "precio": 1899999.0,
+    "precio": 1899999.00,
     "stock": 8,
-    "categoriaId": 1
-  },
-  {
-    "id": 2,
-    "nombre": "Lenovo IdeaPad Gaming 3",
-    "descripcion": "Ryzen 7, RTX 4050, 16 GB RAM, 512 GB SSD",
-    "precio": 1249999.0,
-    "stock": 12,
+    "sku": "MBA-M3-512",
+    "activo": true,
+    "marca": {
+      "id": 1,
+      "nombre": "Apple",
+      "activo": true
+    },
+    "createdAt": "2026-09-03T19:00:00",
+    "updatedAt": "2026-09-03T19:00:00",
     "categoriaId": 1
   }
 ]
@@ -143,11 +144,94 @@ Ejemplo: `GET /api/categorias/1/productos`
 
 ---
 
+## Marcas
+
+### Listar marcas
+
+`GET /api/marcas`
+
+**Respuesta 200**
+
+```json
+[
+  {
+    "id": 1,
+    "nombre": "Apple",
+    "activo": true
+  },
+  {
+    "id": 2,
+    "nombre": "Samsung",
+    "activo": true
+  }
+]
+```
+
+---
+
+### Crear una marca
+
+`POST /api/marcas`
+
+**Body**
+
+```json
+{
+  "nombre": "Apple"
+}
+```
+
+**Respuesta 200**
+
+```json
+{
+  "id": 1,
+  "nombre": "Apple",
+  "activo": true
+}
+```
+
+**Errores**
+
+| Situación | Código | Mensaje |
+|-----------|--------|---------|
+| Falta el nombre | 400 | El nombre de la marca es obligatorio |
+| El nombre ya existe | 409 | La marca ya existe |
+
+---
+
+### Actualizar una marca
+
+`PUT /api/marcas/{id}`
+
+**Body**
+
+```json
+{
+  "nombre": "Apple Inc.",
+  "activo": true
+}
+```
+
+**Respuesta 200**
+
+```json
+{
+  "id": 1,
+  "nombre": "Apple Inc.",
+  "activo": true
+}
+```
+
+Si el id no existe → **404**. Si el nombre ya lo usa otra marca → **409**.
+
+---
+
 ## Productos
 
 ### Listar productos
 
-Lista todos los productos. Para ver solo los de una categoría, usar `GET /api/categorias/{id}/productos`.
+Lista todos los productos. Para filtrar por categoría: `GET /api/categorias/{id}/productos`.
 
 `GET /api/productos`
 
@@ -159,25 +243,18 @@ Lista todos los productos. Para ver solo los de una categoría, usar `GET /api/c
     "id": 1,
     "nombre": "MacBook Air 13 M3",
     "descripcion": "Chip M3, 16 GB RAM, 512 GB SSD",
-    "precio": 1899999.0,
+    "precio": 1899999.00,
     "stock": 8,
+    "sku": "MBA-M3-512",
+    "activo": true,
+    "marca": {
+      "id": 1,
+      "nombre": "Apple",
+      "activo": true
+    },
+    "createdAt": "2026-09-03T19:00:00",
+    "updatedAt": "2026-09-03T19:00:00",
     "categoriaId": 1
-  },
-  {
-    "id": 3,
-    "nombre": "Samsung Galaxy S24",
-    "descripcion": "256 GB, 8 GB RAM, cámara 50 MP",
-    "precio": 999999.0,
-    "stock": 15,
-    "categoriaId": 2
-  },
-  {
-    "id": 4,
-    "nombre": "Logitech MX Master 3S",
-    "descripcion": "Mouse inalámbrico ergonómico, 8000 DPI",
-    "precio": 149999.0,
-    "stock": 30,
-    "categoriaId": 3
   }
 ]
 ```
@@ -186,7 +263,7 @@ Lista todos los productos. Para ver solo los de una categoría, usar `GET /api/c
 
 ### Crear un producto
 
-Crea un producto y lo asigna a una categoría existente. `categoriaId` es obligatorio.
+`categoriaId`, `marcaId` y `sku` son obligatorios (categoría y marca deben existir; el SKU es único).
 
 `POST /api/productos`
 
@@ -198,7 +275,9 @@ Crea un producto y lo asigna a una categoría existente. `categoriaId` es obliga
   "descripcion": "Chip M3, 16 GB RAM, 512 GB SSD",
   "precio": 1899999,
   "stock": 8,
-  "categoriaId": 1
+  "sku": "MBA-M3-512",
+  "categoriaId": 1,
+  "marcaId": 1
 }
 ```
 
@@ -209,31 +288,18 @@ Crea un producto y lo asigna a una categoría existente. `categoriaId` es obliga
   "id": 1,
   "nombre": "MacBook Air 13 M3",
   "descripcion": "Chip M3, 16 GB RAM, 512 GB SSD",
-  "precio": 1899999.0,
+  "precio": 1899999.00,
   "stock": 8,
+  "sku": "MBA-M3-512",
+  "activo": true,
+  "marca": {
+    "id": 1,
+    "nombre": "Apple",
+    "activo": true
+  },
+  "createdAt": "2026-09-03T19:00:00",
+  "updatedAt": "2026-09-03T19:00:00",
   "categoriaId": 1
-}
-```
-
-Otros ejemplos de body:
-
-```json
-{
-  "nombre": "Samsung Galaxy S24",
-  "descripcion": "256 GB, 8 GB RAM, cámara 50 MP",
-  "precio": 999999,
-  "stock": 15,
-  "categoriaId": 2
-}
-```
-
-```json
-{
-  "nombre": "Logitech MX Master 3S",
-  "descripcion": "Mouse inalámbrico ergonómico, 8000 DPI",
-  "precio": 149999,
-  "stock": 30,
-  "categoriaId": 3
 }
 ```
 
@@ -242,14 +308,51 @@ Otros ejemplos de body:
 | Situación | Código | Mensaje |
 |-----------|--------|---------|
 | Falta `categoriaId` | 400 | La categoría es obligatoria |
-| La categoría no existe | 404 | La categoría no existe |
+| Falta `marcaId` | 400 | La marca es obligatoria |
+| Categoría inexistente | 404 | La categoría con id X no existe |
+| Marca inexistente | 404 | La marca con id X no existe |
 
 ---
 
-## Consola H2
+### Actualizar un producto
 
-Para ver las tablas en el navegador: [http://localhost:8081/h2-console](http://localhost:8081/h2-console)
+Actualización parcial: solo se modifican los campos que mandes. El resto queda igual.
 
-- **JDBC URL:** `jdbc:h2:file:./data/ecommerce`
-- **User:** `sa`
-- **Password:** (vacío)
+`PUT /api/productos/{id}`
+
+**Body (ejemplo: solo precio y stock)**
+
+```json
+{
+  "precio": 1799999,
+  "stock": 5
+}
+```
+
+**Body (ejemplo: cambiar categoría y desactivar)**
+
+```json
+{
+  "categoriaId": 2,
+  "activo": false
+}
+```
+
+**Respuesta 200**: el producto actualizado (`updatedAt` se refresca solo).
+
+| Situación | Código |
+|-----------|--------|
+| Producto inexistente | 404 |
+| Categoría/marca inexistente | 404 |
+| SKU vacío | 400 |
+| SKU duplicado en otro producto | 409 |
+
+---
+
+## Flujo sugerido
+
+1. `POST /api/categorias`
+2. `POST /api/marcas`
+3. `POST /api/productos` (con `categoriaId` y `marcaId`)
+4. `PUT /api/productos/{id}` / `PUT /api/categorias/{id}` / `PUT /api/marcas/{id}` cuando haga falta
+5. `GET /api/productos` o `GET /api/categorias/{id}/productos`

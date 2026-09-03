@@ -10,4 +10,6 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
 
     //Obtener todos los productos de una categoria
     List<Producto> findByCategoriaId(Long categoriaId);
+
+    boolean existsBySkuIgnoreCaseAndIdNot(String sku, Long id);
 }

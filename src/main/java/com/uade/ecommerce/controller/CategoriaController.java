@@ -38,6 +38,11 @@ public class CategoriaController {
         return categoriaService.createCategoria(categoria);
     }
 
+    @PutMapping("/{id}")
+    public Categoria updateCategoria(@PathVariable Long id, @RequestBody Categoria categoria) {
+        return categoriaService.updateCategoria(id, categoria);
+    }
+
     @GetMapping("/{id}/productos")
     public List<Producto> getProductosByCategoria(@PathVariable Long id) {
         return productoService.getProductosByCategoria(id);

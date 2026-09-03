@@ -29,4 +29,13 @@ public class ProductoController {
     public Producto createProducto(@RequestBody CreateProductoRequest request) {
         return productoService.createProducto(request);
     }
+
+    //Actualizar un producto
+    @PutMapping("/{id}")
+    public Producto updateProducto(
+            @PathVariable Long id,
+            @RequestBody CreateProductoRequest request
+    ) {
+        return productoService.updateProducto(id, request);
+    }
 }

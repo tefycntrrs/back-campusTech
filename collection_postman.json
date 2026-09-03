@@ -59,6 +59,29 @@
           }
         },
         {
+          "name": "Actualizar categoría",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Notebooks y Ultrabooks\",\n  \"descripcion\": \"Laptops para trabajo, estudio y gaming\",\n  \"activo\": true\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8081/api/categorias/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["api", "categorias", "1"]
+            }
+          }
+        },
+        {
           "name": "Listar productos de una categoría",
           "request": {
             "method": "GET",
@@ -69,6 +92,71 @@
               "host": ["localhost"],
               "port": "8081",
               "path": ["api", "categorias", "1", "productos"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Marcas",
+      "item": [
+        {
+          "name": "Crear marca",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Apple\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8081/api/marcas",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["api", "marcas"]
+            }
+          }
+        },
+        {
+          "name": "Listar marcas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8081/api/marcas",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["api", "marcas"]
+            }
+          }
+        },
+        {
+          "name": "Actualizar marca",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Apple Inc.\",\n  \"activo\": true\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8081/api/marcas/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["api", "marcas", "1"]
             }
           }
         }
@@ -89,7 +177,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nombre\": \"MacBook Air 13 M3\",\n  \"descripcion\": \"Chip M3, 16 GB RAM, 512 GB SSD\",\n  \"precio\": 1899999,\n  \"stock\": 8,\n  \"categoriaId\": 1\n}"
+              "raw": "{\n  \"nombre\": \"MacBook Air 13 M3\",\n  \"descripcion\": \"Chip M3, 16 GB RAM, 512 GB SSD\",\n  \"precio\": 1899999,\n  \"stock\": 8,\n  \"sku\": \"MBA-M3-512\",\n  \"categoriaId\": 1,\n  \"marcaId\": 1\n}"
             },
             "url": {
               "raw": "http://localhost:8081/api/productos",
@@ -111,6 +199,29 @@
               "host": ["localhost"],
               "port": "8081",
               "path": ["api", "productos"]
+            }
+          }
+        },
+        {
+          "name": "Actualizar producto",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"precio\": 1799999,\n  \"stock\": 5\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8081/api/productos/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["api", "productos", "1"]
             }
           }
         }
