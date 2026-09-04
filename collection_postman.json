@@ -5,6 +5,212 @@
   },
   "item": [
     {
+      "name": "Usuarios",
+      "item": [
+        {
+          "name": "Registrar usuario (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Pedro\",\n  \"apellido\": \"Marzano\",\n  \"email\": \"pedro@uade.edu.ar\",\n  \"password\": \"password123\",\n  \"fechaNacimiento\": \"1999-05-20\",\n  \"sexo\": \"MASCULINO\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8081/api/usuarios/registro",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "usuarios",
+                "registro"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Registrar usuario - email duplicado (409)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Pedro\",\n  \"apellido\": \"Marzano\",\n  \"email\": \"pedro@uade.edu.ar\",\n  \"password\": \"password123\",\n  \"fechaNacimiento\": \"1999-05-20\",\n  \"sexo\": \"MASCULINO\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8081/api/usuarios/registro",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "usuarios",
+                "registro"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Registrar usuario - campos invalidos (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"\",\n  \"apellido\": \"Gomez\",\n  \"email\": \"no-es-email\",\n  \"password\": \"123\",\n  \"fechaNacimiento\": \"2999-01-01\",\n  \"sexo\": \"FEMENINO\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8081/api/usuarios/registro",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "usuarios",
+                "registro"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Registrar usuario - sexo inexistente (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Ana\",\n  \"apellido\": \"Gomez\",\n  \"email\": \"ana@uade.edu.ar\",\n  \"password\": \"password123\",\n  \"fechaNacimiento\": \"2000-01-15\",\n  \"sexo\": \"OTRA_COSA\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8081/api/usuarios/registro",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "usuarios",
+                "registro"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar usuarios",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8081/api/usuarios",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "usuarios"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Obtener usuario por id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8081/api/usuarios/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "usuarios",
+                "1"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Obtener usuario inexistente (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8081/api/usuarios/9999",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "usuarios",
+                "9999"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buscar usuario por email",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8081/api/usuarios/buscar?email=pedro@uade.edu.ar",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "usuarios",
+                "buscar"
+              ],
+              "query": [
+                {
+                  "key": "email",
+                  "value": "pedro@uade.edu.ar"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "Categorías",
       "item": [
         {
@@ -24,9 +230,42 @@
             "url": {
               "raw": "http://localhost:8081/api/categorias",
               "protocol": "http",
-              "host": ["localhost"],
+              "host": [
+                "localhost"
+              ],
               "port": "8081",
-              "path": ["api", "categorias"]
+              "path": [
+                "api",
+                "categorias"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear categoría - sin nombre (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"descripcion\": \"Sin nombre\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8081/api/categorias",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "categorias"
+              ]
             }
           }
         },
@@ -38,9 +277,14 @@
             "url": {
               "raw": "http://localhost:8081/api/categorias",
               "protocol": "http",
-              "host": ["localhost"],
+              "host": [
+                "localhost"
+              ],
               "port": "8081",
-              "path": ["api", "categorias"]
+              "path": [
+                "api",
+                "categorias"
+              ]
             }
           }
         },
@@ -52,9 +296,35 @@
             "url": {
               "raw": "http://localhost:8081/api/categorias/1",
               "protocol": "http",
-              "host": ["localhost"],
+              "host": [
+                "localhost"
+              ],
               "port": "8081",
-              "path": ["api", "categorias", "1"]
+              "path": [
+                "api",
+                "categorias",
+                "1"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Obtener categoría inexistente (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8081/api/categorias/999",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "categorias",
+                "999"
+              ]
             }
           }
         },
@@ -75,9 +345,15 @@
             "url": {
               "raw": "http://localhost:8081/api/categorias/1",
               "protocol": "http",
-              "host": ["localhost"],
+              "host": [
+                "localhost"
+              ],
               "port": "8081",
-              "path": ["api", "categorias", "1"]
+              "path": [
+                "api",
+                "categorias",
+                "1"
+              ]
             }
           }
         },
@@ -89,9 +365,16 @@
             "url": {
               "raw": "http://localhost:8081/api/categorias/1/productos",
               "protocol": "http",
-              "host": ["localhost"],
+              "host": [
+                "localhost"
+              ],
               "port": "8081",
-              "path": ["api", "categorias", "1", "productos"]
+              "path": [
+                "api",
+                "categorias",
+                "1",
+                "productos"
+              ]
             }
           }
         }
@@ -117,9 +400,14 @@
             "url": {
               "raw": "http://localhost:8081/api/marcas",
               "protocol": "http",
-              "host": ["localhost"],
+              "host": [
+                "localhost"
+              ],
               "port": "8081",
-              "path": ["api", "marcas"]
+              "path": [
+                "api",
+                "marcas"
+              ]
             }
           }
         },
@@ -131,9 +419,34 @@
             "url": {
               "raw": "http://localhost:8081/api/marcas",
               "protocol": "http",
-              "host": ["localhost"],
+              "host": [
+                "localhost"
+              ],
               "port": "8081",
-              "path": ["api", "marcas"]
+              "path": [
+                "api",
+                "marcas"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Obtener marca por id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8081/api/marcas/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "marcas",
+                "1"
+              ]
             }
           }
         },
@@ -154,9 +467,15 @@
             "url": {
               "raw": "http://localhost:8081/api/marcas/1",
               "protocol": "http",
-              "host": ["localhost"],
+              "host": [
+                "localhost"
+              ],
               "port": "8081",
-              "path": ["api", "marcas", "1"]
+              "path": [
+                "api",
+                "marcas",
+                "1"
+              ]
             }
           }
         }
@@ -182,9 +501,70 @@
             "url": {
               "raw": "http://localhost:8081/api/productos",
               "protocol": "http",
-              "host": ["localhost"],
+              "host": [
+                "localhost"
+              ],
               "port": "8081",
-              "path": ["api", "productos"]
+              "path": [
+                "api",
+                "productos"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear producto - sin sku (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"MacBook Air 13 M3\",\n  \"precio\": 1899999,\n  \"stock\": 8,\n  \"categoriaId\": 1,\n  \"marcaId\": 1\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8081/api/productos",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "productos"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear producto - categoria inexistente (404)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"MacBook Air 13 M3\",\n  \"precio\": 1899999,\n  \"stock\": 8,\n  \"sku\": \"MBA-M3-999\",\n  \"categoriaId\": 99,\n  \"marcaId\": 1\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8081/api/productos",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "productos"
+              ]
             }
           }
         },
@@ -196,9 +576,54 @@
             "url": {
               "raw": "http://localhost:8081/api/productos",
               "protocol": "http",
-              "host": ["localhost"],
+              "host": [
+                "localhost"
+              ],
               "port": "8081",
-              "path": ["api", "productos"]
+              "path": [
+                "api",
+                "productos"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Obtener producto por id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8081/api/productos/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "productos",
+                "1"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Obtener producto inexistente (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8081/api/productos/777",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "productos",
+                "777"
+              ]
             }
           }
         },
@@ -219,9 +644,15 @@
             "url": {
               "raw": "http://localhost:8081/api/productos/1",
               "protocol": "http",
-              "host": ["localhost"],
+              "host": [
+                "localhost"
+              ],
               "port": "8081",
-              "path": ["api", "productos", "1"]
+              "path": [
+                "api",
+                "productos",
+                "1"
+              ]
             }
           }
         }

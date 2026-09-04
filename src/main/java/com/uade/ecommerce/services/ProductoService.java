@@ -1,7 +1,9 @@
 package com.uade.ecommerce.services;
 
 import com.uade.ecommerce.dto.CreateProductoRequest;
+import com.uade.ecommerce.exception.ArgumentInvalidException;
 import com.uade.ecommerce.exception.CategoriaNotFoundException;
+import com.uade.ecommerce.exception.DuplicateResourceException;
 import com.uade.ecommerce.exception.MarcaNotFoundException;
 import com.uade.ecommerce.exception.ProductoNotFoundException;
 import com.uade.ecommerce.model.Categoria;
@@ -11,10 +13,9 @@ import com.uade.ecommerce.repository.CategoriaRepository;
 import com.uade.ecommerce.repository.MarcaRepository;
 import com.uade.ecommerce.repository.ProductoRepository;
 import jakarta.transaction.Transactional;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
@@ -56,19 +57,29 @@ public class ProductoService {
         Categoria categoria = resolveCategoria(request.getCategoriaId());
         Marca marca = resolveMarca(request.getMarcaId());
 
-        if (request.getSku() == null || request.getSku().isBlank()) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "El SKU es obligatorio"
-            );
+        if (request.getNombre() == null || request.getNombre().isBlank()) {
+            throw new ArgumentInvalidException("nombre", "El nombre del producto es obligatorio");
         }
+
+        if (request.getSku() == null || request.getSku().isBlank()) {
+            throw new ArgumentInvalidException("sku", "El SKU es obligatorio");
+        }
+
+        String sku = request.getSku().trim();
+
+        if (productoRepository.existsBySkuIgnoreCase(sku)) {
+            throw new DuplicateResourceException("Producto", "Ya existe un producto con ese SKU");
+        }
+
+        validarPrecio(request.getPrecio());
+        validarStock(request.getStock());
 
         Producto producto = new Producto();
         producto.setNombre(request.getNombre());
         producto.setDescripcion(request.getDescripcion());
         producto.setPrecio(request.getPrecio());
         producto.setStock(request.getStock());
-        producto.setSku(request.getSku().trim());
+        producto.setSku(sku);
         producto.setCategoria(categoria);
         producto.setMarca(marca);
 
@@ -85,18 +96,12 @@ public class ProductoService {
         String sku = null;
         if (request.getSku() != null) {
             if (request.getSku().isBlank()) {
-                throw new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST,
-                        "El SKU no puede estar vacío"
-                );
+                throw new ArgumentInvalidException("sku", "El SKU no puede estar vacío");
             }
 
             sku = request.getSku().trim();
             if (productoRepository.existsBySkuIgnoreCaseAndIdNot(sku, id)) {
-                throw new ResponseStatusException(
-                        HttpStatus.CONFLICT,
-                        "Ya existe un producto con ese SKU"
-                );
+                throw new DuplicateResourceException("Producto", "Ya existe un producto con ese SKU");
             }
         }
 
@@ -119,10 +124,12 @@ public class ProductoService {
         }
 
         if (request.getPrecio() != null) {
+            validarPrecio(request.getPrecio());
             producto.setPrecio(request.getPrecio());
         }
 
         if (request.getStock() != null) {
+            validarStock(request.getStock());
             producto.setStock(request.getStock());
         }
 
@@ -145,12 +152,29 @@ public class ProductoService {
         return productoRepository.save(producto);
     }
 
+    private void validarPrecio(BigDecimal precio) {
+        if (precio == null) {
+            throw new ArgumentInvalidException("precio", "El precio es obligatorio");
+        }
+
+        if (precio.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new ArgumentInvalidException("precio", "El precio debe ser mayor a 0");
+        }
+    }
+
+    private void validarStock(Integer stock) {
+        if (stock == null) {
+            throw new ArgumentInvalidException("stock", "El stock es obligatorio");
+        }
+
+        if (stock < 0) {
+            throw new ArgumentInvalidException("stock", "El stock no puede ser negativo");
+        }
+    }
+
     private Categoria resolveCategoria(Long categoriaId) {
         if (categoriaId == null) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "La categoría es obligatoria"
-            );
+            throw new ArgumentInvalidException("categoriaId", "La categoría es obligatoria");
         }
 
         return categoriaRepository
@@ -160,10 +184,7 @@ public class ProductoService {
 
     private Marca resolveMarca(Long marcaId) {
         if (marcaId == null) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "La marca es obligatoria"
-            );
+            throw new ArgumentInvalidException("marcaId", "La marca es obligatoria");
         }
 
         return marcaRepository
