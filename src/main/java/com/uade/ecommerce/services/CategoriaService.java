@@ -1,12 +1,12 @@
 package com.uade.ecommerce.services;
 
+import com.uade.ecommerce.exception.ArgumentInvalidException;
 import com.uade.ecommerce.exception.CategoriaNotFoundException;
+import com.uade.ecommerce.exception.DuplicateResourceException;
 import com.uade.ecommerce.model.Categoria;
 import com.uade.ecommerce.repository.CategoriaRepository;
 import jakarta.transaction.Transactional;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -30,20 +30,10 @@ public class CategoriaService {
     }
 
     public Categoria createCategoria(Categoria categoria) {
-        if (categoria.getNombre() == null || categoria.getNombre().isBlank()) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "El nombre de la categoría es obligatorio"
-            );
-        }
-
-        String nombre = categoria.getNombre().trim();
+        String nombre = validarNombre(categoria.getNombre());
 
         if (categoriaRepository.existsByNombreIgnoreCase(nombre)) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "La categoría ya existe"
-            );
+            throw new DuplicateResourceException("Categoria", "La categoría ya existe");
         }
 
         categoria.setNombre(nombre);
@@ -52,21 +42,10 @@ public class CategoriaService {
 
     public Categoria updateCategoria(Long id, Categoria request) {
         Categoria categoria = getCategoriaById(id);
-
-        if (request.getNombre() == null || request.getNombre().isBlank()) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "El nombre de la categoría es obligatorio"
-            );
-        }
-
-        String nombre = request.getNombre().trim();
+        String nombre = validarNombre(request.getNombre());
 
         if (categoriaRepository.existsByNombreIgnoreCaseAndIdNot(nombre, id)) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "La categoría ya existe"
-            );
+            throw new DuplicateResourceException("Categoria", "La categoría ya existe");
         }
 
         categoria.setNombre(nombre);
@@ -77,5 +56,16 @@ public class CategoriaService {
         }
 
         return categoriaRepository.save(categoria);
+    }
+
+    private String validarNombre(String nombre) {
+        if (nombre == null || nombre.isBlank()) {
+            throw new ArgumentInvalidException(
+                    "nombre",
+                    "El nombre de la categoría es obligatorio"
+            );
+        }
+
+        return nombre.trim();
     }
 }

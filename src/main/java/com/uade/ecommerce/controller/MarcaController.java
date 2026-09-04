@@ -2,8 +2,12 @@ package com.uade.ecommerce.controller;
 
 import com.uade.ecommerce.model.Marca;
 import com.uade.ecommerce.services.MarcaService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.util.UriComponentsBuilder;
 
+import java.net.URI;
 import java.util.List;
 
 @RestController
@@ -17,17 +21,41 @@ public class MarcaController {
     }
 
     @GetMapping
-    public List<Marca> getAllMarcas() {
-        return marcaService.getAllMarcas();
+    public ResponseEntity<List<Marca>> getAllMarcas() {
+        List<Marca> marcas = marcaService.getAllMarcas();
+
+        if (marcas.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+        }
+
+        return ResponseEntity.ok(marcas);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Marca> getMarcaById(@PathVariable Long id) {
+        return ResponseEntity.ok(marcaService.getMarcaById(id));
     }
 
     @PostMapping
-    public Marca createMarca(@RequestBody Marca marca) {
-        return marcaService.createMarca(marca);
+    public ResponseEntity<Marca> createMarca(
+            @RequestBody Marca marca,
+            UriComponentsBuilder uriBuilder
+    ) {
+        Marca creada = marcaService.createMarca(marca);
+
+        URI location = uriBuilder
+                .path("/api/marcas/{id}")
+                .buildAndExpand(creada.getId())
+                .toUri();
+
+        return ResponseEntity.created(location).body(creada);
     }
 
     @PutMapping("/{id}")
-    public Marca updateMarca(@PathVariable Long id, @RequestBody Marca marca) {
-        return marcaService.updateMarca(id, marca);
+    public ResponseEntity<Marca> updateMarca(
+            @PathVariable Long id,
+            @RequestBody Marca marca
+    ) {
+        return ResponseEntity.ok(marcaService.updateMarca(id, marca));
     }
 }
