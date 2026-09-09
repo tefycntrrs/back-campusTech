@@ -14,13 +14,13 @@ import java.time.LocalDate;
 /**
  * DTO de entrada del registro: es el JSON que recibe POST /api/usuarios/registro.
  *
- * <p>No se recibe directamente la entidad Usuario para que el cliente no pueda mandar campos
- * que no le corresponden (id, activo, createdAt) ni una contraseña ya codificada.</p>
+ * No se recibe directamente la entidad Usuario para que el cliente no pueda mandar campos
+ * que no le corresponden (id, activo, createdAt) ni una contraseña ya codificada.
  *
- * <p>Las anotaciones de abajo son las validaciones de formato y las dispara el @Valid del
+ * Las anotaciones de abajo son las validaciones de formato y las dispara el @Valid del
  * controller: si alguna falla, Spring corta antes de entrar al service y el GlobalExceptionHandler
  * devuelve un 400 con el detalle campo por campo. Las reglas de negocio (email único, edad mínima)
- * no están acá, están en UsuarioService.</p>
+ * no están acá, están en UsuarioService.
  */
 @Data
 public class CreateUsuarioRequest {
