@@ -1,7 +1,9 @@
 package com.uade.ecommerce.controller;
 
+import com.uade.ecommerce.dto.CategoriaRequest;
+import com.uade.ecommerce.dto.CategoriaResponse;
+import com.uade.ecommerce.dto.ProductoResponse;
 import com.uade.ecommerce.model.Categoria;
-import com.uade.ecommerce.model.Producto;
 import com.uade.ecommerce.services.CategoriaService;
 import com.uade.ecommerce.services.ProductoService;
 import org.springframework.http.HttpStatus;
@@ -28,50 +30,94 @@ public class CategoriaController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Categoria>> getAllCategorias() {
-        List<Categoria> categorias = categoriaService.getAllCategorias();
+    public ResponseEntity<List<CategoriaResponse>> getAllCategorias() {
+
+        List<CategoriaResponse> categorias =
+                categoriaService.getAllCategorias()
+                        .stream()
+                        .map(CategoriaResponse::from)
+                        .toList();
 
         if (categorias.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+            return ResponseEntity
+                    .status(HttpStatus.NO_CONTENT)
+                    .build();
         }
 
         return ResponseEntity.ok(categorias);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Categoria> getCategoriaById(@PathVariable Long id) {
-        return ResponseEntity.ok(categoriaService.getCategoriaById(id));
+    public ResponseEntity<CategoriaResponse> getCategoriaById(
+            @PathVariable Long id
+    ) {
+
+        return ResponseEntity.ok(
+                CategoriaResponse.from(
+                        categoriaService.getCategoriaById(id)
+                )
+        );
     }
 
     @PostMapping
-    public ResponseEntity<Categoria> createCategoria(
-            @RequestBody Categoria categoria,
+    public ResponseEntity<CategoriaResponse> createCategoria(
+            @RequestBody CategoriaRequest request,
             UriComponentsBuilder uriBuilder
     ) {
-        Categoria creada = categoriaService.createCategoria(categoria);
+
+        Categoria categoria = new Categoria();
+        categoria.setNombre(request.getNombre());
+        categoria.setDescripcion(request.getDescripcion());
+        categoria.setActivo(request.getActivo());
+
+        Categoria creada =
+                categoriaService.createCategoria(categoria);
 
         URI location = uriBuilder
                 .path("/api/categorias/{id}")
                 .buildAndExpand(creada.getId())
                 .toUri();
 
-        return ResponseEntity.created(location).body(creada);
+        return ResponseEntity
+                .created(location)
+                .body(CategoriaResponse.from(creada));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Categoria> updateCategoria(
+    public ResponseEntity<CategoriaResponse> updateCategoria(
             @PathVariable Long id,
-            @RequestBody Categoria categoria
+            @RequestBody CategoriaRequest request
     ) {
-        return ResponseEntity.ok(categoriaService.updateCategoria(id, categoria));
+
+        Categoria categoria = new Categoria();
+
+        categoria.setNombre(request.getNombre());
+        categoria.setDescripcion(request.getDescripcion());
+        categoria.setActivo(request.getActivo());
+
+        Categoria actualizada =
+                categoriaService.updateCategoria(id, categoria);
+
+        return ResponseEntity.ok(
+                CategoriaResponse.from(actualizada)
+        );
     }
 
     @GetMapping("/{id}/productos")
-    public ResponseEntity<List<Producto>> getProductosByCategoria(@PathVariable Long id) {
-        List<Producto> productos = productoService.getProductosByCategoria(id);
+    public ResponseEntity<List<ProductoResponse>> getProductosByCategoria(
+            @PathVariable Long id
+    ) {
+
+        List<ProductoResponse> productos =
+                productoService.getProductosByCategoria(id)
+                        .stream()
+                        .map(ProductoResponse::from)
+                        .toList();
 
         if (productos.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+            return ResponseEntity
+                    .status(HttpStatus.NO_CONTENT)
+                    .build();
         }
 
         return ResponseEntity.ok(productos);

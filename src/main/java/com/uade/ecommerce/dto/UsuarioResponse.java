@@ -21,7 +21,7 @@ import java.time.Period;
  * Es un record: los datos son de solo lectura, no tiene setters.
  */
 public record UsuarioResponse(
-        Long id,
+        Long userId,
         String nombre,
         String apellido,
         String email,
