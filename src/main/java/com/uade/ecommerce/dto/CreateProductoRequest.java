@@ -7,14 +7,14 @@ import java.math.BigDecimal;
 /**
  * DTO de entrada del producto: lo usan POST /api/productos y PUT /api/productos/{id}.
  *
- * <p>En vez de la entidad Producto recibe los ids de las relaciones (categoriaId, marcaId);
- * el service los busca en la base y arma el Producto con la Categoria y la Marca de verdad.</p>
+ * En vez de la entidad Producto recibe los ids de las relaciones (categoriaId, marcaId);
+ * el service los busca en la base y arma el Producto con la Categoria y la Marca de verdad.
  *
- * <p>No tiene anotaciones de validación a propósito, porque el mismo DTO sirve para crear y para
+ * No tiene anotaciones de validación a propósito, porque el mismo DTO sirve para crear y para
  * actualizar: el PUT es parcial (podés mandar solo precio y stock, y el resto queda como estaba),
  * así que un @NotNull acá rompería la actualización. Las validaciones están escritas a mano en
  * ProductoService, que sí sabe distinguir "crear" de "actualizar" y lanza ArgumentInvalidException
- * (400) o DuplicateResourceException (409) según el caso.</p>
+ * (400) o DuplicateResourceException (409) según el caso.
  */
 @Data
 public class CreateProductoRequest {
