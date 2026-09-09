@@ -8,13 +8,13 @@ import java.util.Map;
 /**
  * DTO de salida de los errores: el cuerpo único que devuelve la API cuando algo falla.
  *
- * <p>Lo arma siempre el GlobalExceptionHandler, nunca un controller. Gracias a esto todos los
+ * Lo arma siempre el GlobalExceptionHandler, nunca un controller. Gracias a esto todos los
  * errores tienen la misma forma (404, 400, 409 o 500), y el front puede leerlos de una sola manera.</p>
  *
  * <p>El @JsonInclude(NON_NULL) hace que los campos en null no aparezcan en el JSON: así un 404
- * sale limpio y solo los errores de campos traen el mapa "errores".</p>
+ * sale limpio y solo los errores de campos traen el mapa "errores".
  *
- * <pre>
+ * 
  * {
  *   "timestamp": "2026-09-03T21:00:31.178",
  *   "status": 400,
@@ -23,7 +23,7 @@ import java.util.Map;
  *   "path": "/api/usuarios/registro",
  *   "errores": { "email": "El email no tiene un formato válido" }
  * }
- * </pre>
+ * 
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record ErrorResponse(
