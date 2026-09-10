@@ -1,7 +1,5 @@
 package com.uade.ecommerce.controller;
 
-import com.uade.ecommerce.dto.MarcaRequest;
-import com.uade.ecommerce.dto.MarcaResponse;
 import com.uade.ecommerce.model.Marca;
 import com.uade.ecommerce.services.MarcaService;
 import org.springframework.http.HttpStatus;
@@ -23,73 +21,41 @@ public class MarcaController {
     }
 
     @GetMapping
-    public ResponseEntity<List<MarcaResponse>> getAllMarcas() {
-
-        List<MarcaResponse> marcas =
-                marcaService.getAllMarcas()
-                        .stream()
-                        .map(MarcaResponse::from)
-                        .toList();
+    public ResponseEntity<List<Marca>> getAllMarcas() {
+        List<Marca> marcas = marcaService.getAllMarcas();
 
         if (marcas.isEmpty()) {
-            return ResponseEntity
-                    .status(HttpStatus.NO_CONTENT)
-                    .build();
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
         }
 
         return ResponseEntity.ok(marcas);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<MarcaResponse> getMarcaById(
-            @PathVariable Long id
-    ) {
-
-        return ResponseEntity.ok(
-                MarcaResponse.from(
-                        marcaService.getMarcaById(id)
-                )
-        );
+    public ResponseEntity<Marca> getMarcaById(@PathVariable Long id) {
+        return ResponseEntity.ok(marcaService.getMarcaById(id));
     }
 
     @PostMapping
-    public ResponseEntity<MarcaResponse> createMarca(
-            @RequestBody MarcaRequest request,
+    public ResponseEntity<Marca> createMarca(
+            @RequestBody Marca marca,
             UriComponentsBuilder uriBuilder
     ) {
-
-        Marca marca = new Marca();
-        marca.setNombre(request.getNombre());
-        marca.setActivo(request.getActivo());
-
-        Marca creada =
-                marcaService.createMarca(marca);
+        Marca creada = marcaService.createMarca(marca);
 
         URI location = uriBuilder
                 .path("/api/marcas/{id}")
                 .buildAndExpand(creada.getId())
                 .toUri();
 
-        return ResponseEntity
-                .created(location)
-                .body(MarcaResponse.from(creada));
+        return ResponseEntity.created(location).body(creada);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<MarcaResponse> updateMarca(
+    public ResponseEntity<Marca> updateMarca(
             @PathVariable Long id,
-            @RequestBody MarcaRequest request
+            @RequestBody Marca marca
     ) {
-
-        Marca marca = new Marca();
-        marca.setNombre(request.getNombre());
-        marca.setActivo(request.getActivo());
-
-        Marca actualizada =
-                marcaService.updateMarca(id, marca);
-
-        return ResponseEntity.ok(
-                MarcaResponse.from(actualizada)
-        );
+        return ResponseEntity.ok(marcaService.updateMarca(id, marca));
     }
 }

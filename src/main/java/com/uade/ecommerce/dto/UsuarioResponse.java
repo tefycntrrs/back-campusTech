@@ -11,19 +11,20 @@ import java.time.Period;
 /**
  * DTO de salida del usuario: es lo que devuelven todos los endpoints de /api/usuarios.
  *
- * Hace tres cosas que la entidad Usuario no puede hacer sola:
- * 
- *   no incluye la contraseña, ni siquiera codificada;
- *   agrega la edad, que no está guardada en la base sino calculada desde la fecha de nacimiento;
- *   expone solo los campos públicos, así un cambio en la entidad no cambia la API sin querer.
- * 
+ * <p>Hace tres cosas que la entidad Usuario no puede hacer sola:</p>
+ * <ul>
+ *   <li>no incluye la contraseña, ni siquiera codificada;</li>
+ *   <li>agrega la edad, que no está guardada en la base sino calculada desde la fecha de nacimiento;</li>
+ *   <li>expone solo los campos públicos, así un cambio en la entidad no cambia la API sin querer.</li>
+ * </ul>
  *
- * Es un record: los datos son de solo lectura, no tiene setters.
+ * <p>Es un record: los datos son de solo lectura, no tiene setters.</p>
  */
 public record UsuarioResponse(
-        Long userId,
+        Long id,
         String nombre,
         String apellido,
+        String username,
         String email,
         @JsonFormat(pattern = "yyyy-MM-dd") LocalDate fechaNacimiento,
         Integer edad,
@@ -43,6 +44,7 @@ public record UsuarioResponse(
                 usuario.getId(),
                 usuario.getNombre(),
                 usuario.getApellido(),
+                usuario.getUsername(),
                 usuario.getEmail(),
                 usuario.getFechaNacimiento(),
                 edad,

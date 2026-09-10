@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Past;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -14,13 +15,13 @@ import java.time.LocalDate;
 /**
  * DTO de entrada del registro: es el JSON que recibe POST /api/usuarios/registro.
  *
- * No se recibe directamente la entidad Usuario para que el cliente no pueda mandar campos
- * que no le corresponden (id, activo, createdAt) ni una contraseña ya codificada.
+ * <p>No se recibe directamente la entidad Usuario para que el cliente no pueda mandar campos
+ * que no le corresponden (id, activo, createdAt) ni una contraseña ya codificada.</p>
  *
- * Las anotaciones de abajo son las validaciones de formato y las dispara el @Valid del
+ * <p>Las anotaciones de abajo son las validaciones de formato y las dispara el @Valid del
  * controller: si alguna falla, Spring corta antes de entrar al service y el GlobalExceptionHandler
  * devuelve un 400 con el detalle campo por campo. Las reglas de negocio (email único, edad mínima)
- * no están acá, están en UsuarioService.
+ * no están acá, están en UsuarioService.</p>
  */
 @Data
 public class CreateUsuarioRequest {
@@ -32,6 +33,15 @@ public class CreateUsuarioRequest {
     @NotBlank(message = "El apellido es obligatorio")
     @Size(max = 100, message = "El apellido no puede superar los 100 caracteres")
     private String apellido;
+
+    // Nombre público y único con el que el usuario aparece en la app (lo pide el TPO)
+    @NotBlank(message = "El username es obligatorio")
+    @Size(min = 3, max = 50, message = "El username debe tener entre 3 y 50 caracteres")
+    @Pattern(
+            regexp = "^[a-zA-Z0-9._-]+$",
+            message = "El username solo puede tener letras, números, puntos, guiones y guiones bajos"
+    )
+    private String username;
 
     @NotBlank(message = "El email es obligatorio")
     @Email(message = "El email no tiene un formato válido")

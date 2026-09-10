@@ -11,10 +11,14 @@ import java.util.List;
 public interface ProductoRepository extends JpaRepository<Producto, Long> {
 
     //Obtener todos los productos de una categoria.
-    //Se escribe la consulta a mano porque Producto expone getCategoriaId() y la
-    //query derivada intentaba resolver un atributo 'categoriaId' que no existe en la entidad.
-    @Query("SELECT p FROM Producto p WHERE p.categoria.id = :categoriaId")
+    //Ahora la relación es N:N, así que se recorre la tabla intermedia producto_categorias
+    //con un JOIN sobre la colección p.categorias en vez de comparar una FK.
+    @Query("SELECT DISTINCT p FROM Producto p JOIN p.categorias c WHERE c.id = :categoriaId")
     List<Producto> findByCategoriaId(@Param("categoriaId") Long categoriaId);
+
+    //Publicaciones creadas por un usuario vendedor
+    @Query("SELECT p FROM Producto p WHERE p.vendedor.id = :vendedorId")
+    List<Producto> findByVendedorId(@Param("vendedorId") Long vendedorId);
 
     boolean existsBySkuIgnoreCaseAndIdNot(String sku, Long id);
 

@@ -18,4 +18,17 @@ public class UsuarioNotFoundException extends ResourceNotFoundException {
     public UsuarioNotFoundException(String email) {
         super("Usuario", "El usuario con email " + email + " no existe");
     }
+
+    /**
+     * Búsqueda por username: GET /api/usuarios/buscar?username=...
+     * Es un método estático y no un constructor porque email y username son los dos String
+     * y Java no puede distinguir dos constructores con la misma firma.
+     */
+    public static UsuarioNotFoundException porUsername(String username) {
+        return new UsuarioNotFoundException("username", username);
+    }
+
+    private UsuarioNotFoundException(String campo, String valor) {
+        super("Usuario", "El usuario con " + campo + " " + valor + " no existe");
+    }
 }

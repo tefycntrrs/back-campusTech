@@ -1,7 +1,9 @@
 package com.uade.ecommerce.services;
 
 import com.uade.ecommerce.dto.CreateUsuarioRequest;
+import com.uade.ecommerce.dto.LoginRequest;
 import com.uade.ecommerce.exception.ArgumentInvalidException;
+import com.uade.ecommerce.exception.CredencialesInvalidasException;
 import com.uade.ecommerce.exception.DuplicateResourceException;
 import com.uade.ecommerce.exception.UsuarioNotFoundException;
 import com.uade.ecommerce.model.Usuario;
@@ -37,6 +39,15 @@ public class UsuarioService {
                 .orElseThrow(() -> new UsuarioNotFoundException(id));
     }
 
+    public Usuario getUsuarioByUsername(String username) {
+        if (username == null || username.isBlank()) {
+            throw new ArgumentInvalidException("username", "El username es obligatorio");
+        }
+
+        return usuarioRepository.findByUsernameIgnoreCase(username.trim())
+                .orElseThrow(() -> UsuarioNotFoundException.porUsername(username));
+    }
+
     public Usuario getUsuarioByEmail(String email) {
         if (email == null || email.isBlank()) {
             throw new ArgumentInvalidException("email", "El email es obligatorio");
@@ -52,9 +63,14 @@ public class UsuarioService {
      */
     public Usuario registrarUsuario(CreateUsuarioRequest request) {
         String email = request.getEmail().trim().toLowerCase();
+        String username = request.getUsername().trim();
 
         if (usuarioRepository.existsByEmailIgnoreCase(email)) {
             throw new DuplicateResourceException("Usuario", "email", email);
+        }
+
+        if (usuarioRepository.existsByUsernameIgnoreCase(username)) {
+            throw new DuplicateResourceException("Usuario", "username", username);
         }
 
         validarFechaNacimiento(request.getFechaNacimiento());
@@ -62,12 +78,31 @@ public class UsuarioService {
         Usuario usuario = new Usuario();
         usuario.setNombre(request.getNombre().trim());
         usuario.setApellido(request.getApellido().trim());
+        usuario.setUsername(username);
         usuario.setEmail(email);
         usuario.setPassword(passwordEncoder.encode(request.getPassword()));
         usuario.setFechaNacimiento(request.getFechaNacimiento());
         usuario.setSexo(request.getSexo());
 
         return usuarioRepository.save(usuario);
+    }
+
+   
+    public Usuario login(LoginRequest request) {
+        String email = request.getEmail().trim().toLowerCase();
+
+        Usuario usuario = usuarioRepository.findByEmailIgnoreCase(email)
+                .orElseThrow(CredencialesInvalidasException::new);
+
+        if (!passwordEncoder.matches(request.getPassword(), usuario.getPassword())) {
+            throw new CredencialesInvalidasException();
+        }
+
+        if (Boolean.FALSE.equals(usuario.getActivo())) {
+            throw new CredencialesInvalidasException();
+        }
+
+        return usuario;
     }
 
     private void validarFechaNacimiento(LocalDate fechaNacimiento) {

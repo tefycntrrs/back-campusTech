@@ -6,17 +6,23 @@ import com.uade.ecommerce.exception.CategoriaNotFoundException;
 import com.uade.ecommerce.exception.DuplicateResourceException;
 import com.uade.ecommerce.exception.MarcaNotFoundException;
 import com.uade.ecommerce.exception.ProductoNotFoundException;
+import com.uade.ecommerce.exception.UsuarioNotFoundException;
 import com.uade.ecommerce.model.Categoria;
 import com.uade.ecommerce.model.Marca;
 import com.uade.ecommerce.model.Producto;
+import com.uade.ecommerce.model.ProductoImagen;
+import com.uade.ecommerce.model.Usuario;
 import com.uade.ecommerce.repository.CategoriaRepository;
 import com.uade.ecommerce.repository.MarcaRepository;
 import com.uade.ecommerce.repository.ProductoRepository;
+import com.uade.ecommerce.repository.UsuarioRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @Transactional
@@ -25,15 +31,18 @@ public class ProductoService {
     private final ProductoRepository productoRepository;
     private final CategoriaRepository categoriaRepository;
     private final MarcaRepository marcaRepository;
+    private final UsuarioRepository usuarioRepository;
 
     public ProductoService(
             ProductoRepository productoRepository,
             CategoriaRepository categoriaRepository,
-            MarcaRepository marcaRepository
+            MarcaRepository marcaRepository,
+            UsuarioRepository usuarioRepository
     ) {
         this.productoRepository = productoRepository;
         this.categoriaRepository = categoriaRepository;
         this.marcaRepository = marcaRepository;
+        this.usuarioRepository = usuarioRepository;
     }
 
     public List<Producto> getAllProductos() {
@@ -53,9 +62,19 @@ public class ProductoService {
         return productoRepository.findByCategoriaId(categoriaId);
     }
 
+    /** Publicaciones de un usuario: el otro lado de Usuario 1:N Producto. */
+    public List<Producto> getProductosByVendedor(Long vendedorId) {
+        if (!usuarioRepository.existsById(vendedorId)) {
+            throw new UsuarioNotFoundException(vendedorId);
+        }
+
+        return productoRepository.findByVendedorId(vendedorId);
+    }
+
     public Producto createProducto(CreateProductoRequest request) {
-        Categoria categoria = resolveCategoria(request.getCategoriaId());
+        Set<Categoria> categorias = resolveCategorias(request.categoriasSolicitadas());
         Marca marca = resolveMarca(request.getMarcaId());
+        Usuario vendedor = resolveVendedor(request.getVendedorId());
 
         if (request.getNombre() == null || request.getNombre().isBlank()) {
             throw new ArgumentInvalidException("nombre", "El nombre del producto es obligatorio");
@@ -80,12 +99,15 @@ public class ProductoService {
         producto.setPrecio(request.getPrecio());
         producto.setStock(request.getStock());
         producto.setSku(sku);
-        producto.setCategoria(categoria);
+        producto.setCategorias(categorias);
         producto.setMarca(marca);
+        producto.setVendedor(vendedor);
 
         if (request.getActivo() != null) {
             producto.setActivo(request.getActivo());
         }
+
+        agregarImagenes(producto, request.getImagenes());
 
         return productoRepository.save(producto);
     }
@@ -105,14 +127,21 @@ public class ProductoService {
             }
         }
 
-        Categoria categoria = null;
-        if (request.getCategoriaId() != null) {
-            categoria = resolveCategoria(request.getCategoriaId());
+        // Si mandan categorías, reemplazan por completo a las que tenía el producto
+        List<Long> categoriaIds = request.categoriasSolicitadas();
+        Set<Categoria> categorias = null;
+        if (categoriaIds != null) {
+            categorias = resolveCategorias(categoriaIds);
         }
 
         Marca marca = null;
         if (request.getMarcaId() != null) {
             marca = resolveMarca(request.getMarcaId());
+        }
+
+        Usuario vendedor = null;
+        if (request.getVendedorId() != null) {
+            vendedor = resolveVendedor(request.getVendedorId());
         }
 
         if (request.getNombre() != null) {
@@ -141,12 +170,22 @@ public class ProductoService {
             producto.setActivo(request.getActivo());
         }
 
-        if (categoria != null) {
-            producto.setCategoria(categoria);
+        if (categorias != null) {
+            producto.setCategorias(categorias);
         }
 
         if (marca != null) {
             producto.setMarca(marca);
+        }
+
+        if (vendedor != null) {
+            producto.setVendedor(vendedor);
+        }
+
+        // Igual que las categorías: si mandan imágenes, reemplazan la galería completa
+        if (request.getImagenes() != null) {
+            producto.getImagenes().clear();
+            agregarImagenes(producto, request.getImagenes());
         }
 
         return productoRepository.save(producto);
@@ -172,14 +211,31 @@ public class ProductoService {
         }
     }
 
-    private Categoria resolveCategoria(Long categoriaId) {
-        if (categoriaId == null) {
-            throw new ArgumentInvalidException("categoriaId", "La categoría es obligatoria");
+    /**
+     * Busca todas las categorías pedidas. Un producto tiene que tener al menos una, y si
+     * alguno de los ids no existe corta con 404 en vez de guardar el producto a medias.
+     */
+    private Set<Categoria> resolveCategorias(List<Long> categoriaIds) {
+        if (categoriaIds == null || categoriaIds.isEmpty()) {
+            throw new ArgumentInvalidException(
+                    "categoriaIds",
+                    "El producto debe tener al menos una categoría"
+            );
         }
 
-        return categoriaRepository
-                .findById(categoriaId)
-                .orElseThrow(() -> new CategoriaNotFoundException(categoriaId));
+        Set<Categoria> categorias = new LinkedHashSet<>();
+
+        for (Long categoriaId : categoriaIds) {
+            if (categoriaId == null) {
+                throw new ArgumentInvalidException("categoriaIds", "Hay un id de categoría vacío");
+            }
+
+            categorias.add(categoriaRepository
+                    .findById(categoriaId)
+                    .orElseThrow(() -> new CategoriaNotFoundException(categoriaId)));
+        }
+
+        return categorias;
     }
 
     private Marca resolveMarca(Long marcaId) {
@@ -190,5 +246,41 @@ public class ProductoService {
         return marcaRepository
                 .findById(marcaId)
                 .orElseThrow(() -> new MarcaNotFoundException(marcaId));
+    }
+
+    private Usuario resolveVendedor(Long vendedorId) {
+        if (vendedorId == null) {
+            throw new ArgumentInvalidException(
+                    "vendedorId",
+                    "El vendedor es obligatorio: toda publicación tiene que tener un usuario que la creó"
+            );
+        }
+
+        return usuarioRepository
+                .findById(vendedorId)
+                .orElseThrow(() -> new UsuarioNotFoundException(vendedorId));
+    }
+
+    /** Arma la galería del producto: la primera imagen queda marcada como principal. */
+    private void agregarImagenes(Producto producto, List<String> urls) {
+        if (urls == null || urls.isEmpty()) {
+            return;
+        }
+
+        int orden = 0;
+
+        for (String url : urls) {
+            if (url == null || url.isBlank()) {
+                throw new ArgumentInvalidException("imagenes", "Hay una URL de imagen vacía");
+            }
+
+            ProductoImagen imagen = new ProductoImagen();
+            imagen.setUrl(url.trim());
+            imagen.setOrden(orden);
+            imagen.setPrincipal(orden == 0);
+
+            producto.agregarImagen(imagen);
+            orden++;
+        }
     }
 }

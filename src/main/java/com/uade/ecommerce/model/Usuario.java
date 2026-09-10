@@ -4,10 +4,14 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -26,6 +30,10 @@ public class Usuario {
     @Column(nullable = false, length = 100)
     private String apellido;
 
+    // Nombre público con el que el usuario aparece en la app. Único, igual que el email
+    @Column(nullable = false, unique = true, length = 50)
+    private String username;
+
     @Column(nullable = false, unique = true, length = 150)
     private String email;
 
@@ -43,6 +51,16 @@ public class Usuario {
 
     @Column(nullable = false)
     private Boolean activo = true;
+
+    /**
+     * Publicaciones creadas por este usuario (Usuario 1:N Producto). El dueño de la relación
+     * es Producto.vendedor, que es el que guarda la columna vendedor_id.
+     */
+    @OneToMany(mappedBy = "vendedor")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @JsonIgnore
+    private List<Producto> productos = new ArrayList<>();
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

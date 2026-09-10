@@ -1,7 +1,6 @@
 package com.uade.ecommerce.controller;
 
 import com.uade.ecommerce.dto.CreateProductoRequest;
-import com.uade.ecommerce.dto.ProductoResponse;
 import com.uade.ecommerce.model.Producto;
 import com.uade.ecommerce.services.ProductoService;
 import org.springframework.http.HttpStatus;
@@ -18,70 +17,51 @@ public class ProductoController {
 
     private final ProductoService productoService;
 
+    //Constructor de la clase ProductoController
     public ProductoController(ProductoService productoService) {
         this.productoService = productoService;
     }
 
+    //Obtener todos los productos -> 200 con la lista, 204 si no hay ninguno
     @GetMapping
-    public ResponseEntity<List<ProductoResponse>> getAllProductos() {
-
-        List<ProductoResponse> productos = productoService
-                .getAllProductos()
-                .stream()
-                .map(ProductoResponse::from)
-                .toList();
+    public ResponseEntity<List<Producto>> getAllProductos() {
+        List<Producto> productos = productoService.getAllProductos();
 
         if (productos.isEmpty()) {
-            return ResponseEntity
-                    .status(HttpStatus.NO_CONTENT)
-                    .build();
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
         }
 
         return ResponseEntity.ok(productos);
     }
 
+    //Obtener un producto por id -> 200, o 404 desde el GlobalExceptionHandler
     @GetMapping("/{id}")
-    public ResponseEntity<ProductoResponse> getProductoById(
-            @PathVariable Long id
-    ) {
-
-        Producto producto = productoService.getProductoById(id);
-
-        return ResponseEntity.ok(
-                ProductoResponse.from(producto)
-        );
+    public ResponseEntity<Producto> getProductoById(@PathVariable Long id) {
+        return ResponseEntity.ok(productoService.getProductoById(id));
     }
 
+    //Crear un nuevo producto -> 201 Created + header Location
     @PostMapping
-    public ResponseEntity<ProductoResponse> createProducto(
+    public ResponseEntity<Producto> createProducto(
             @RequestBody CreateProductoRequest request,
             UriComponentsBuilder uriBuilder
     ) {
-
-        Producto producto =
-                productoService.createProducto(request);
+        Producto producto = productoService.createProducto(request);
 
         URI location = uriBuilder
                 .path("/api/productos/{id}")
                 .buildAndExpand(producto.getId())
                 .toUri();
 
-        return ResponseEntity
-                .created(location)
-                .body(ProductoResponse.from(producto));
+        return ResponseEntity.created(location).body(producto);
     }
 
+    //Actualizar un producto -> 200 con el producto actualizado
     @PutMapping("/{id}")
-    public ResponseEntity<ProductoResponse> updateProducto(
+    public ResponseEntity<Producto> updateProducto(
             @PathVariable Long id,
             @RequestBody CreateProductoRequest request
     ) {
-
-        Producto producto =
-                productoService.updateProducto(id, request);
-
-        return ResponseEntity.ok(
-                ProductoResponse.from(producto)
-        );
+        return ResponseEntity.ok(productoService.updateProducto(id, request));
     }
 }
