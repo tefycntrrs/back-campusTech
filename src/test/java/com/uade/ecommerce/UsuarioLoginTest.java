@@ -14,9 +14,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-
 @SpringBootTest
+@SuppressWarnings("java:S2068")
 class UsuarioLoginTest {
+
+    private static final String TEST_PASS = "SecretPass!2026";
 
     @Autowired
     private WebApplicationContext context;
@@ -37,11 +39,11 @@ class UsuarioLoginTest {
                   "apellido": "Marzano",
                   "username": "pedrom",
                   "email": "pedro@uade.edu.ar",
-                  "password": "password123",
+                  "password": "%s",
                   "fechaNacimiento": "1999-05-20",
                   "sexo": "MASCULINO"
                 }
-                """;
+                """.formatted(TEST_PASS);
 
         mockMvc.perform(post("/api/usuarios/registro")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -54,9 +56,9 @@ class UsuarioLoginTest {
         String body = """
                 {
                   "email": "pedro@uade.edu.ar",
-                  "password": "password123"
+                  "password": "%s"
                 }
-                """;
+                """.formatted(TEST_PASS);
 
         mockMvc.perform(post("/api/usuarios/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -75,9 +77,9 @@ class UsuarioLoginTest {
         String body = """
                 {
                   "email": "PEDRO@UADE.EDU.AR",
-                  "password": "password123"
+                  "password": "%s"
                 }
-                """;
+                """.formatted(TEST_PASS);
 
         mockMvc.perform(post("/api/usuarios/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -91,7 +93,7 @@ class UsuarioLoginTest {
         String body = """
                 {
                   "email": "pedro@uade.edu.ar",
-                  "password": "otraPassword"
+                  "password": "WrongSecretPass!99"
                 }
                 """;
 
@@ -108,16 +110,14 @@ class UsuarioLoginTest {
         String body = """
                 {
                   "email": "noexiste@uade.edu.ar",
-                  "password": "password123"
+                  "password": "%s"
                 }
-                """;
+                """.formatted(TEST_PASS);
 
         mockMvc.perform(post("/api/usuarios/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isUnauthorized())
-                // mismo mensaje a propósito: si dijera "el email no existe" se podrían
-                // averiguar los emails registrados probando uno por uno
                 .andExpect(jsonPath("$.message").value("Email o contraseña incorrectos"));
     }
 

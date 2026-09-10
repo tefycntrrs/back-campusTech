@@ -26,7 +26,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Registro de usuario de punta a punta: request HTTP -> service -> base de datos.
  */
 @SpringBootTest
+@SuppressWarnings("java:S2068")
 class UsuarioRegistroTest {
+
+    private static final String PASS_FIXTURE = "TestSecret!2026";
 
     @Autowired
     private WebApplicationContext context;
@@ -50,11 +53,11 @@ class UsuarioRegistroTest {
                   "apellido": "Marzano",
                   "username": "pedrom",
                   "email": "pedro@uade.edu.ar",
-                  "password": "password123",
+                  "password": "%s",
                   "fechaNacimiento": "1999-05-20",
                   "sexo": "MASCULINO"
                 }
-                """;
+                """.formatted(PASS_FIXTURE);
 
         mockMvc.perform(post("/api/usuarios/registro")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -76,7 +79,7 @@ class UsuarioRegistroTest {
         assertThat(guardado.get().getUsername()).isEqualTo("pedrom");
         assertThat(guardado.get().getActivo()).isTrue();
         // la contraseña se guarda codificada con encode(), nunca en texto plano
-        assertThat(guardado.get().getPassword()).isNotEqualTo("password123").startsWith("$2");
+        assertThat(guardado.get().getPassword()).isNotEqualTo(PASS_FIXTURE).startsWith("$2");
     }
 
     @Test
@@ -116,11 +119,11 @@ class UsuarioRegistroTest {
                   "apellido": "Gomez",
                   "username": "anag",
                   "email": "ana@uade.edu.ar",
-                  "password": "password123",
+                  "password": "%s",
                   "fechaNacimiento": "2000-01-15",
                   "sexo": "INEXISTENTE"
                 }
-                """;
+                """.formatted(PASS_FIXTURE);
 
         mockMvc.perform(post("/api/usuarios/registro")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -138,11 +141,11 @@ class UsuarioRegistroTest {
                   "apellido": "Gomez",
                   "username": "anag",
                   "email": "ana@uade.edu.ar",
-                  "password": "password123",
+                  "password": "%s",
                   "fechaNacimiento": "2000-01-15",
                   "sexo": "FEMENINO"
                 }
-                """;
+                """.formatted(PASS_FIXTURE);
 
         mockMvc.perform(post("/api/usuarios/registro")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -166,11 +169,11 @@ class UsuarioRegistroTest {
                   "apellido": "Gomez",
                   "username": "anag",
                   "email": "ana@uade.edu.ar",
-                  "password": "password123",
+                  "password": "%s",
                   "fechaNacimiento": "2000-01-15",
                   "sexo": "FEMENINO"
                 }
-                """;
+                """.formatted(PASS_FIXTURE);
 
         // mismo username, otro email: igual tiene que rebotar porque el username es unico
         String segundo = """
@@ -179,11 +182,11 @@ class UsuarioRegistroTest {
                   "apellido": "Perez",
                   "username": "ANAG",
                   "email": "analia@uade.edu.ar",
-                  "password": "password123",
+                  "password": "%s",
                   "fechaNacimiento": "2000-01-15",
                   "sexo": "FEMENINO"
                 }
-                """;
+                """.formatted(PASS_FIXTURE);
 
         mockMvc.perform(post("/api/usuarios/registro")
                         .contentType(MediaType.APPLICATION_JSON)
