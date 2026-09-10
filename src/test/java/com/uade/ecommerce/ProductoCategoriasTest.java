@@ -81,7 +81,8 @@ class ProductoCategoriasTest {
                   "sku": "ROG-G14-4070",
                   "categoriaIds": [%d, %d],
                   "marcaId": %d,
-                  "vendedorId": %d
+                  "vendedorId": %d,
+                  "imagenes": [{"url": "https://cdn.ejemplo.com/rog-g14.jpg"}]
                 }
                 """.formatted(notebooksId, gamingId, marcaId, vendedorId);
 
@@ -117,7 +118,8 @@ class ProductoCategoriasTest {
                   "sku": "TUF-A15",
                   "categoriaIds": [%d],
                   "marcaId": %d,
-                  "vendedorId": %d
+                  "vendedorId": %d,
+                  "imagenes": [{"url": "https://cdn.ejemplo.com/tuf-a15.jpg"}]
                 }
                 """.formatted(notebooksId, marcaId, vendedorId);
 
@@ -177,7 +179,8 @@ class ProductoCategoriasTest {
                   "sku": "COMPAT-1",
                   "categoriaId": %d,
                   "marcaId": %d,
-                  "vendedorId": %d
+                  "vendedorId": %d,
+                  "imagenes": [{"url": "https://cdn.ejemplo.com/compat.jpg"}]
                 }
                 """.formatted(notebooksId, marcaId, vendedorId);
 

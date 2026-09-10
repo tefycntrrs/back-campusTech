@@ -6,6 +6,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -19,16 +20,25 @@ public class ProductoResponse {
     private String sku;
     private Boolean activo;
 
-    private Long categoriaId;
-    private String categoriaNombre;
+    private List<Long> categoriaIds;
 
     private Long marcaId;
     private String marcaNombre;
+
+    private Long vendedorId;
+    private String vendedorUsername;
+
+    private List<ImagenProductoResponse> imagenes;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
     public static ProductoResponse from(Producto producto) {
+
+        List<ImagenProductoResponse> imagenes = producto.getImagenes()
+                .stream()
+                .map(ImagenProductoResponse::from)
+                .toList();
 
         return new ProductoResponse(
                 producto.getId(),
@@ -39,13 +49,7 @@ public class ProductoResponse {
                 producto.getSku(),
                 producto.getActivo(),
 
-                producto.getCategoria() != null
-                        ? producto.getCategoria().getId()
-                        : null,
-
-                producto.getCategoria() != null
-                        ? producto.getCategoria().getNombre()
-                        : null,
+                producto.getCategoriaIds(),
 
                 producto.getMarca() != null
                         ? producto.getMarca().getId()
@@ -54,6 +58,12 @@ public class ProductoResponse {
                 producto.getMarca() != null
                         ? producto.getMarca().getNombre()
                         : null,
+
+                producto.getVendedorId(),
+
+                producto.getVendedorUsername(),
+
+                imagenes,
 
                 producto.getCreatedAt(),
                 producto.getUpdatedAt()

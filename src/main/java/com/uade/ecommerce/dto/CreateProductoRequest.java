@@ -51,8 +51,8 @@ public class CreateProductoRequest {
     /** Usuario que publica el producto. Obligatorio al crear: queda guardado como vendedor. */
     private Long vendedorId;
 
-    /** Galería del producto (opcional). Cada elemento es la URL de una imagen. */
-    private List<String> imagenes;
+    /** Galería del producto (opcional en el PUT, obligatoria al crear). */
+    private List<ImagenProductoRequest> imagenes;
 
     /**
      * Devuelve las categorías pedidas unificando categoriaIds y el viejo categoriaId,

@@ -62,6 +62,15 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.UNAUTHORIZED, exception.getMessage(), request);
     }
 
+    // 403 - El recurso existe pero quien lo pide no es su dueño
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<ErrorResponse> handleForbidden(
+            ForbiddenException exception,
+            HttpServletRequest request
+    ) {
+        return build(HttpStatus.FORBIDDEN, exception.getMessage(), request);
+    }
+
     // 409 - Valores únicos repetidos (email, sku, nombre)
     @ExceptionHandler(DuplicateResourceException.class)
     public ResponseEntity<ErrorResponse> handleDuplicateResource(

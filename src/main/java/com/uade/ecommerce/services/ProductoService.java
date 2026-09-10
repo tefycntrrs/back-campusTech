@@ -1,9 +1,11 @@
 package com.uade.ecommerce.services;
 
 import com.uade.ecommerce.dto.CreateProductoRequest;
+import com.uade.ecommerce.dto.ImagenProductoRequest;
 import com.uade.ecommerce.exception.ArgumentInvalidException;
 import com.uade.ecommerce.exception.CategoriaNotFoundException;
 import com.uade.ecommerce.exception.DuplicateResourceException;
+import com.uade.ecommerce.exception.ForbiddenException;
 import com.uade.ecommerce.exception.MarcaNotFoundException;
 import com.uade.ecommerce.exception.ProductoNotFoundException;
 import com.uade.ecommerce.exception.UsuarioNotFoundException;
@@ -45,8 +47,8 @@ public class ProductoService {
         this.usuarioRepository = usuarioRepository;
     }
 
-    public List<Producto> getAllProductos() {
-        return productoRepository.findAll();
+    public List<Producto> getCatalogo() {
+        return productoRepository.findByActivoTrueOrderByNombreAsc();
     }
 
     public Producto getProductoById(Long id) {
@@ -54,12 +56,22 @@ public class ProductoService {
                 .orElseThrow(() -> new ProductoNotFoundException(id));
     }
 
+    public Producto getProductoPublico(Long id) {
+        Producto producto = getProductoById(id);
+
+        if (Boolean.FALSE.equals(producto.getActivo())) {
+            throw new ProductoNotFoundException(id);
+        }
+
+        return producto;
+    }
+
     public List<Producto> getProductosByCategoria(Long categoriaId) {
         if (!categoriaRepository.existsById(categoriaId)) {
             throw new CategoriaNotFoundException(categoriaId);
         }
 
-        return productoRepository.findByCategoriaId(categoriaId);
+        return productoRepository.findActivosByCategoriaId(categoriaId);
     }
 
     /** Publicaciones de un usuario: el otro lado de Usuario 1:N Producto. */
@@ -93,6 +105,10 @@ public class ProductoService {
         validarPrecio(request.getPrecio());
         validarStock(request.getStock());
 
+        if (request.getImagenes() == null || request.getImagenes().isEmpty()) {
+            throw new ArgumentInvalidException("imagenes", "El producto debe tener al menos una imagen");
+        }
+
         Producto producto = new Producto();
         producto.setNombre(request.getNombre());
         producto.setDescripcion(request.getDescripcion());
@@ -107,13 +123,14 @@ public class ProductoService {
             producto.setActivo(request.getActivo());
         }
 
-        agregarImagenes(producto, request.getImagenes());
+        reemplazarImagenes(producto, request.getImagenes());
 
         return productoRepository.save(producto);
     }
 
-    public Producto updateProducto(Long id, CreateProductoRequest request) {
+    public Producto updateProducto(Long id, Long usuarioId, CreateProductoRequest request) {
         Producto producto = getProductoById(id);
+        verificarPropietario(producto, usuarioId);
 
         String sku = null;
         if (request.getSku() != null) {
@@ -184,11 +201,60 @@ public class ProductoService {
 
         // Igual que las categorías: si mandan imágenes, reemplazan la galería completa
         if (request.getImagenes() != null) {
-            producto.getImagenes().clear();
-            agregarImagenes(producto, request.getImagenes());
+            if (request.getImagenes().isEmpty()) {
+                throw new ArgumentInvalidException("imagenes", "El producto debe tener al menos una imagen");
+            }
+            reemplazarImagenes(producto, request.getImagenes());
         }
 
         return productoRepository.save(producto);
+    }
+
+    public void eliminarProducto(Long id, Long usuarioId) {
+        Producto producto = getProductoById(id);
+        verificarPropietario(producto, usuarioId);
+
+        if (Boolean.FALSE.equals(producto.getActivo())) {
+            return;
+        }
+
+        producto.setActivo(false);
+        productoRepository.save(producto);
+    }
+
+    private void reemplazarImagenes(Producto producto, List<ImagenProductoRequest> imagenes) {
+
+        producto.limpiarImagenes();
+
+        boolean yaHayPrincipal = false;
+
+        for (int posicion = 0; posicion < imagenes.size(); posicion++) {
+
+            ImagenProductoRequest datos = imagenes.get(posicion);
+
+            if (datos == null || datos.getUrl() == null || datos.getUrl().isBlank()) {
+                throw new ArgumentInvalidException("imagenes", "Cada imagen necesita una url");
+            }
+
+            boolean principal = Boolean.TRUE.equals(datos.getPrincipal()) && !yaHayPrincipal;
+            yaHayPrincipal = yaHayPrincipal || principal;
+
+            Integer orden = datos.getOrden();
+            if (orden == null) {
+                orden = posicion;
+            }
+
+            ProductoImagen imagen = new ProductoImagen();
+            imagen.setUrl(datos.getUrl().trim());
+            imagen.setOrden(orden);
+            imagen.setPrincipal(principal);
+
+            producto.agregarImagen(imagen);
+        }
+
+        if (!yaHayPrincipal) {
+            producto.getImagenes().get(0).setPrincipal(true);
+        }
     }
 
     private void validarPrecio(BigDecimal precio) {
@@ -261,26 +327,17 @@ public class ProductoService {
                 .orElseThrow(() -> new UsuarioNotFoundException(vendedorId));
     }
 
-    /** Arma la galería del producto: la primera imagen queda marcada como principal. */
-    private void agregarImagenes(Producto producto, List<String> urls) {
-        if (urls == null || urls.isEmpty()) {
-            return;
+    private void verificarPropietario(Producto producto, Long usuarioId) {
+        if (usuarioId == null) {
+            throw new ArgumentInvalidException("usuarioId", "Falta indicar el usuario que realiza la operación");
         }
 
-        int orden = 0;
+        if (!usuarioRepository.existsById(usuarioId)) {
+            throw new UsuarioNotFoundException(usuarioId);
+        }
 
-        for (String url : urls) {
-            if (url == null || url.isBlank()) {
-                throw new ArgumentInvalidException("imagenes", "Hay una URL de imagen vacía");
-            }
-
-            ProductoImagen imagen = new ProductoImagen();
-            imagen.setUrl(url.trim());
-            imagen.setOrden(orden);
-            imagen.setPrincipal(orden == 0);
-
-            producto.agregarImagen(imagen);
-            orden++;
+        if (!producto.perteneceA(usuarioId)) {
+            throw new ForbiddenException("El producto pertenece a otro usuario");
         }
     }
 }

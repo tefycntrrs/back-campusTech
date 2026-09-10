@@ -1,5 +1,6 @@
 {
   "info": {
+    "_postman_id": "e0000000-0000-4000-8000-000000000001",
     "name": "Ecommerce Group 1",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
@@ -496,7 +497,35 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nombre\": \"MacBook Air 13 M3\",\n  \"descripcion\": \"Chip M3, 16 GB RAM, 512 GB SSD\",\n  \"precio\": 1899999,\n  \"stock\": 8,\n  \"sku\": \"MBA-M3-512\",\n  \"categoriaId\": 1,\n  \"marcaId\": 1\n}"
+              "raw": "{\n  \"nombre\": \"MacBook Air 13 M3\",\n  \"descripcion\": \"Chip M3, 16 GB RAM, 512 GB SSD\",\n  \"precio\": 1899999,\n  \"stock\": 8,\n  \"sku\": \"MBA-M3-512\",\n  \"categoriaId\": 1,\n  \"marcaId\": 1,\n  \"usuarioId\": 1,\n  \"imagenes\": [\n    { \"url\": \"https://cdn.ejemplo.com/mba-m3/frente.jpg\", \"principal\": true },\n    { \"url\": \"https://cdn.ejemplo.com/mba-m3/lateral.jpg\" }\n  ]\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8081/api/productos",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "productos"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear producto - sin imagenes (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"MacBook Air 13 M3\",\n  \"precio\": 1899999,\n  \"stock\": 8,\n  \"sku\": \"MBA-M3-777\",\n  \"categoriaId\": 1,\n  \"marcaId\": 1\n}"
             },
             "url": {
               "raw": "http://localhost:8081/api/productos",
@@ -628,7 +657,7 @@
           }
         },
         {
-          "name": "Actualizar producto",
+          "name": "Actualizar producto / gestion de stock (propietario)",
           "request": {
             "method": "PUT",
             "header": [
@@ -639,10 +668,10 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"precio\": 1799999,\n  \"stock\": 5\n}"
+              "raw": "{\n  \"stock\": 5\n}"
             },
             "url": {
-              "raw": "http://localhost:8081/api/productos/1",
+              "raw": "http://localhost:8081/api/productos/1?usuarioId=1",
               "protocol": "http",
               "host": [
                 "localhost"
@@ -652,6 +681,134 @@
                 "api",
                 "productos",
                 "1"
+              ],
+              "query": [
+                {
+                  "key": "usuarioId",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Actualizar producto - otro usuario (403)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"stock\": 0\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8081/api/productos/1?usuarioId=2",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "productos",
+                "1"
+              ],
+              "query": [
+                {
+                  "key": "usuarioId",
+                  "value": "2"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Actualizar producto - reemplazar galeria",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"imagenes\": [\n    { \"url\": \"https://cdn.ejemplo.com/mba-m3/nueva-portada.jpg\", \"principal\": true },\n    { \"url\": \"https://cdn.ejemplo.com/mba-m3/detalle.jpg\" }\n  ]\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8081/api/productos/1?usuarioId=1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "productos",
+                "1"
+              ],
+              "query": [
+                {
+                  "key": "usuarioId",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Eliminar producto - baja logica (propietario)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8081/api/productos/1?usuarioId=1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "productos",
+                "1"
+              ],
+              "query": [
+                {
+                  "key": "usuarioId",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Eliminar producto - otro usuario (403)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8081/api/productos/1?usuarioId=2",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "productos",
+                "1"
+              ],
+              "query": [
+                {
+                  "key": "usuarioId",
+                  "value": "2"
+                }
               ]
             }
           }

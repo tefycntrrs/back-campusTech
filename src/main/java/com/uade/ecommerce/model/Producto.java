@@ -116,6 +116,16 @@ public class Producto {
         this.imagenes.add(imagen);
     }
 
+    public boolean perteneceA(Long usuarioId) {
+        return usuarioId != null
+                && vendedor != null
+                && usuarioId.equals(vendedor.getId());
+    }
+
+    public void limpiarImagenes() {
+        this.imagenes.clear();
+    }
+
     @PrePersist
     public void prePersist() {
         LocalDateTime ahora = LocalDateTime.now();
