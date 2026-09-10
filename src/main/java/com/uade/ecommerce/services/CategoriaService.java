@@ -1,5 +1,6 @@
 package com.uade.ecommerce.services;
 
+import com.uade.ecommerce.dto.CategoriaRequest;
 import com.uade.ecommerce.exception.ArgumentInvalidException;
 import com.uade.ecommerce.exception.CategoriaNotFoundException;
 import com.uade.ecommerce.exception.DuplicateResourceException;
@@ -29,18 +30,24 @@ public class CategoriaService {
                 .orElseThrow(() -> new CategoriaNotFoundException(id));
     }
 
-    public Categoria createCategoria(Categoria categoria) {
-        String nombre = validarNombre(categoria.getNombre());
+    public Categoria createCategoria(CategoriaRequest request) {
+        String nombre = validarNombre(request.getNombre());
 
         if (categoriaRepository.existsByNombreIgnoreCase(nombre)) {
             throw new DuplicateResourceException("Categoria", "La categoría ya existe");
         }
 
+        Categoria categoria = new Categoria();
         categoria.setNombre(nombre);
+        categoria.setDescripcion(request.getDescripcion());
+        if (request.getActivo() != null) {
+            categoria.setActivo(request.getActivo());
+        }
+
         return categoriaRepository.save(categoria);
     }
 
-    public Categoria updateCategoria(Long id, Categoria request) {
+    public Categoria updateCategoria(Long id, CategoriaRequest request) {
         Categoria categoria = getCategoriaById(id);
         String nombre = validarNombre(request.getNombre());
 

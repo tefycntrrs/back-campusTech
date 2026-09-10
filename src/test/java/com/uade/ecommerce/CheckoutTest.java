@@ -181,7 +181,7 @@ class CheckoutTest {
 
         // total esperado: 2*100 + 3*50 = 350
         mockMvc.perform(post("/api/carritos/{id}/checkout", carrito.getId()))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.numero").exists())
                 .andExpect(jsonPath("$.estado").value("CONFIRMADO"))
                 .andExpect(jsonPath("$.subtotal").value(350.0))
@@ -223,7 +223,7 @@ class CheckoutTest {
         Carrito carrito = crearCarritoConItems(1, 1);
 
         mockMvc.perform(post("/api/carritos/{id}/checkout", carrito.getId()))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
 
         // segundo checkout sobre el mismo carrito, ya FINALIZADO
         mockMvc.perform(post("/api/carritos/{id}/checkout", carrito.getId()))

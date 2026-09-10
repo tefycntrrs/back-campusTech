@@ -3,9 +3,9 @@ package com.uade.ecommerce.controller;
 import com.uade.ecommerce.dto.CreateUsuarioRequest;
 import com.uade.ecommerce.dto.LoginRequest;
 import com.uade.ecommerce.dto.LoginResponse;
+import com.uade.ecommerce.dto.ProductoResponse;
 import com.uade.ecommerce.dto.UsuarioResponse;
 import com.uade.ecommerce.exception.ArgumentInvalidException;
-import com.uade.ecommerce.model.Producto;
 import com.uade.ecommerce.model.Usuario;
 import com.uade.ecommerce.services.ProductoService;
 import com.uade.ecommerce.services.UsuarioService;
@@ -87,8 +87,11 @@ public class UsuarioController {
 
     // Publicaciones creadas por el usuario -> el otro lado de Usuario 1:N Producto
     @GetMapping("/{id}/productos")
-    public ResponseEntity<List<Producto>> getProductosByVendedor(@PathVariable Long id) {
-        List<Producto> productos = productoService.getProductosByVendedor(id);
+    public ResponseEntity<List<ProductoResponse>> getProductosByVendedor(@PathVariable Long id) {
+        List<ProductoResponse> productos = productoService.getProductosByVendedor(id)
+                .stream()
+                .map(ProductoResponse::from)
+                .toList();
 
         if (productos.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NO_CONTENT).build();

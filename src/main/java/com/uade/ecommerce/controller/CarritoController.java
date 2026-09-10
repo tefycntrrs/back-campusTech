@@ -10,6 +10,9 @@ import com.uade.ecommerce.services.PedidoService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.util.UriComponentsBuilder;
+
+import java.net.URI;
 
 @RestController
 @RequestMapping("/api/carritos")
@@ -96,15 +99,22 @@ public class CarritoController {
         );
     }
 
+    // Checkout crea un Pedido nuevo -> 201 Created + Location
     @PostMapping("/{id}/checkout")
     public ResponseEntity<PedidoResponse> checkout(
-            @PathVariable Long id
+            @PathVariable Long id,
+            UriComponentsBuilder uriBuilder
     ) {
 
         Pedido pedido = pedidoService.checkout(id);
 
-        return ResponseEntity.ok(
-                PedidoResponse.from(pedido)
-        );
+        URI location = uriBuilder
+                .path("/api/pedidos/{id}")
+                .buildAndExpand(pedido.getId())
+                .toUri();
+
+        return ResponseEntity
+                .created(location)
+                .body(PedidoResponse.from(pedido));
     }
 }

@@ -1,5 +1,7 @@
 package com.uade.ecommerce.controller;
 
+import com.uade.ecommerce.dto.MarcaRequest;
+import com.uade.ecommerce.dto.MarcaResponse;
 import com.uade.ecommerce.model.Marca;
 import com.uade.ecommerce.services.MarcaService;
 import org.springframework.http.HttpStatus;
@@ -21,8 +23,11 @@ public class MarcaController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Marca>> getAllMarcas() {
-        List<Marca> marcas = marcaService.getAllMarcas();
+    public ResponseEntity<List<MarcaResponse>> getAllMarcas() {
+        List<MarcaResponse> marcas = marcaService.getAllMarcas()
+                .stream()
+                .map(MarcaResponse::from)
+                .toList();
 
         if (marcas.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
@@ -32,30 +37,30 @@ public class MarcaController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Marca> getMarcaById(@PathVariable Long id) {
-        return ResponseEntity.ok(marcaService.getMarcaById(id));
+    public ResponseEntity<MarcaResponse> getMarcaById(@PathVariable Long id) {
+        return ResponseEntity.ok(MarcaResponse.from(marcaService.getMarcaById(id)));
     }
 
     @PostMapping
-    public ResponseEntity<Marca> createMarca(
-            @RequestBody Marca marca,
+    public ResponseEntity<MarcaResponse> createMarca(
+            @RequestBody MarcaRequest request,
             UriComponentsBuilder uriBuilder
     ) {
-        Marca creada = marcaService.createMarca(marca);
+        Marca creada = marcaService.createMarca(request);
 
         URI location = uriBuilder
                 .path("/api/marcas/{id}")
                 .buildAndExpand(creada.getId())
                 .toUri();
 
-        return ResponseEntity.created(location).body(creada);
+        return ResponseEntity.created(location).body(MarcaResponse.from(creada));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Marca> updateMarca(
+    public ResponseEntity<MarcaResponse> updateMarca(
             @PathVariable Long id,
-            @RequestBody Marca marca
+            @RequestBody MarcaRequest request
     ) {
-        return ResponseEntity.ok(marcaService.updateMarca(id, marca));
+        return ResponseEntity.ok(MarcaResponse.from(marcaService.updateMarca(id, request)));
     }
 }

@@ -20,7 +20,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nombre\": \"Pedro\",\n  \"apellido\": \"Marzano\",\n  \"email\": \"pedro@uade.edu.ar\",\n  \"password\": \"password123\",\n  \"fechaNacimiento\": \"1999-05-20\",\n  \"sexo\": \"MASCULINO\"\n}"
+              "raw": "{\n  \"nombre\": \"Pedro\",\n  \"apellido\": \"Marzano\",\n  \"username\": \"pedro.marzano\",\n  \"email\": \"pedro@uade.edu.ar\",\n  \"password\": \"password123\",\n  \"fechaNacimiento\": \"1999-05-20\",\n  \"sexo\": \"MASCULINO\"\n}"
             },
             "url": {
               "raw": "http://localhost:8081/api/usuarios/registro",
@@ -49,7 +49,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nombre\": \"Pedro\",\n  \"apellido\": \"Marzano\",\n  \"email\": \"pedro@uade.edu.ar\",\n  \"password\": \"password123\",\n  \"fechaNacimiento\": \"1999-05-20\",\n  \"sexo\": \"MASCULINO\"\n}"
+              "raw": "{\n  \"nombre\": \"Pedro\",\n  \"apellido\": \"Marzano\",\n  \"username\": \"pedro.marzano\",\n  \"email\": \"pedro@uade.edu.ar\",\n  \"password\": \"password123\",\n  \"fechaNacimiento\": \"1999-05-20\",\n  \"sexo\": \"MASCULINO\"\n}"
             },
             "url": {
               "raw": "http://localhost:8081/api/usuarios/registro",
@@ -78,7 +78,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nombre\": \"\",\n  \"apellido\": \"Gomez\",\n  \"email\": \"no-es-email\",\n  \"password\": \"123\",\n  \"fechaNacimiento\": \"2999-01-01\",\n  \"sexo\": \"FEMENINO\"\n}"
+              "raw": "{\n  \"nombre\": \"\",\n  \"apellido\": \"Gomez\",\n  \"username\": \"invalido\",\n  \"email\": \"no-es-email\",\n  \"password\": \"123\",\n  \"fechaNacimiento\": \"2999-01-01\",\n  \"sexo\": \"FEMENINO\"\n}"
             },
             "url": {
               "raw": "http://localhost:8081/api/usuarios/registro",
@@ -107,7 +107,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nombre\": \"Ana\",\n  \"apellido\": \"Gomez\",\n  \"email\": \"ana@uade.edu.ar\",\n  \"password\": \"password123\",\n  \"fechaNacimiento\": \"2000-01-15\",\n  \"sexo\": \"OTRA_COSA\"\n}"
+              "raw": "{\n  \"nombre\": \"Ana\",\n  \"apellido\": \"Gomez\",\n  \"username\": \"ana.gomez\",\n  \"email\": \"ana@uade.edu.ar\",\n  \"password\": \"password123\",\n  \"fechaNacimiento\": \"2000-01-15\",\n  \"sexo\": \"OTRA_COSA\"\n}"
             },
             "url": {
               "raw": "http://localhost:8081/api/usuarios/registro",
@@ -205,6 +205,111 @@
                   "key": "email",
                   "value": "pedro@uade.edu.ar"
                 }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buscar usuario por username",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8081/api/usuarios/buscar?username=pedro.marzano",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "usuarios",
+                "buscar"
+              ],
+              "query": [
+                {
+                  "key": "username",
+                  "value": "pedro.marzano"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar productos del vendedor",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8081/api/usuarios/1/productos",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "usuarios",
+                "1",
+                "productos"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Login (200)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"pedro@uade.edu.ar\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8081/api/usuarios/login",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "usuarios",
+                "login"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Login - credenciales invalidas (401)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"pedro@uade.edu.ar\",\n  \"password\": \"clave-incorrecta\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8081/api/usuarios/login",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "usuarios",
+                "login"
               ]
             }
           }
@@ -497,7 +602,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nombre\": \"MacBook Air 13 M3\",\n  \"descripcion\": \"Chip M3, 16 GB RAM, 512 GB SSD\",\n  \"precio\": 1899999,\n  \"stock\": 8,\n  \"sku\": \"MBA-M3-512\",\n  \"categoriaId\": 1,\n  \"marcaId\": 1,\n  \"usuarioId\": 1,\n  \"imagenes\": [\n    { \"url\": \"https://cdn.ejemplo.com/mba-m3/frente.jpg\", \"principal\": true },\n    { \"url\": \"https://cdn.ejemplo.com/mba-m3/lateral.jpg\" }\n  ]\n}"
+              "raw": "{\n  \"nombre\": \"MacBook Air 13 M3\",\n  \"descripcion\": \"Chip M3, 16 GB RAM, 512 GB SSD\",\n  \"precio\": 1899999,\n  \"stock\": 8,\n  \"sku\": \"MBA-M3-512\",\n  \"categoriaIds\": [1, 2],\n  \"marcaId\": 1,\n  \"vendedorId\": 1,\n  \"imagenes\": [\n    { \"url\": \"https://cdn.ejemplo.com/mba-m3/frente.jpg\", \"principal\": true },\n    { \"url\": \"https://cdn.ejemplo.com/mba-m3/lateral.jpg\" }\n  ]\n}"
             },
             "url": {
               "raw": "http://localhost:8081/api/productos",
@@ -525,7 +630,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nombre\": \"MacBook Air 13 M3\",\n  \"precio\": 1899999,\n  \"stock\": 8,\n  \"sku\": \"MBA-M3-777\",\n  \"categoriaId\": 1,\n  \"marcaId\": 1\n}"
+              "raw": "{\n  \"nombre\": \"MacBook Air 13 M3\",\n  \"precio\": 1899999,\n  \"stock\": 8,\n  \"sku\": \"MBA-M3-777\",\n  \"categoriaIds\": [1],\n  \"marcaId\": 1,\n  \"vendedorId\": 1\n}"
             },
             "url": {
               "raw": "http://localhost:8081/api/productos",
@@ -553,7 +658,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nombre\": \"MacBook Air 13 M3\",\n  \"precio\": 1899999,\n  \"stock\": 8,\n  \"categoriaId\": 1,\n  \"marcaId\": 1\n}"
+              "raw": "{\n  \"nombre\": \"MacBook Air 13 M3\",\n  \"precio\": 1899999,\n  \"stock\": 8,\n  \"categoriaIds\": [1],\n  \"marcaId\": 1,\n  \"vendedorId\": 1,\n  \"imagenes\": [\n    { \"url\": \"https://cdn.ejemplo.com/mba-m3/frente.jpg\", \"principal\": true }\n  ]\n}"
             },
             "url": {
               "raw": "http://localhost:8081/api/productos",
@@ -581,7 +686,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nombre\": \"MacBook Air 13 M3\",\n  \"precio\": 1899999,\n  \"stock\": 8,\n  \"sku\": \"MBA-M3-999\",\n  \"categoriaId\": 99,\n  \"marcaId\": 1\n}"
+              "raw": "{\n  \"nombre\": \"MacBook Air 13 M3\",\n  \"precio\": 1899999,\n  \"stock\": 8,\n  \"sku\": \"MBA-M3-999\",\n  \"categoriaIds\": [99],\n  \"marcaId\": 1,\n  \"vendedorId\": 1,\n  \"imagenes\": [\n    { \"url\": \"https://cdn.ejemplo.com/mba-m3/frente.jpg\", \"principal\": true }\n  ]\n}"
             },
             "url": {
               "raw": "http://localhost:8081/api/productos",
@@ -1037,6 +1142,49 @@
                 "items"
               ]
             }
+          }
+        },
+        {
+          "name": "Checkout (201)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8081/api/carritos/1/checkout",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "carritos",
+                "1",
+                "checkout"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Checkout - stock insuficiente (400)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8081/api/carritos/1/checkout",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "carritos",
+                "1",
+                "checkout"
+              ]
+            },
+            "description": "Usar cuando un item del carrito pide mas cantidad que el stock actual. Debe devolver 400 y no descontar ningun stock."
           }
         }
       ]

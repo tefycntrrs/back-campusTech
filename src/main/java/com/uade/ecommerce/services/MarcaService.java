@@ -1,5 +1,6 @@
 package com.uade.ecommerce.services;
 
+import com.uade.ecommerce.dto.MarcaRequest;
 import com.uade.ecommerce.exception.ArgumentInvalidException;
 import com.uade.ecommerce.exception.DuplicateResourceException;
 import com.uade.ecommerce.exception.MarcaNotFoundException;
@@ -29,18 +30,23 @@ public class MarcaService {
                 .orElseThrow(() -> new MarcaNotFoundException(id));
     }
 
-    public Marca createMarca(Marca marca) {
-        String nombre = validarNombre(marca.getNombre());
+    public Marca createMarca(MarcaRequest request) {
+        String nombre = validarNombre(request.getNombre());
 
         if (marcaRepository.existsByNombreIgnoreCase(nombre)) {
             throw new DuplicateResourceException("Marca", "La marca ya existe");
         }
 
+        Marca marca = new Marca();
         marca.setNombre(nombre);
+        if (request.getActivo() != null) {
+            marca.setActivo(request.getActivo());
+        }
+
         return marcaRepository.save(marca);
     }
 
-    public Marca updateMarca(Long id, Marca request) {
+    public Marca updateMarca(Long id, MarcaRequest request) {
         Marca marca = getMarcaById(id);
         String nombre = validarNombre(request.getNombre());
 
