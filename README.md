@@ -1,4 +1,4 @@
-# ecommerce-backend-group1
+# back-campustech-group1
 API REST de ecommerce construida con Java y Spring Boot (Fase 1: Backend).
 
 La documentación de los endpoints está en [documentacion.md](documentacion.md) y hay una
