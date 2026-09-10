@@ -2,8 +2,11 @@ package com.uade.ecommerce.controller;
 
 import com.uade.ecommerce.dto.AgregarItemCarritoRequest;
 import com.uade.ecommerce.dto.CarritoResponse;
+import com.uade.ecommerce.dto.PedidoResponse;
 import com.uade.ecommerce.model.Carrito;
+import com.uade.ecommerce.model.Pedido;
 import com.uade.ecommerce.services.CarritoService;
+import com.uade.ecommerce.services.PedidoService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,11 +16,14 @@ import org.springframework.web.bind.annotation.*;
 public class CarritoController {
 
     private final CarritoService carritoService;
+    private final PedidoService pedidoService;
 
     public CarritoController(
-            CarritoService carritoService
+            CarritoService carritoService,
+            PedidoService pedidoService
     ) {
         this.carritoService = carritoService;
+        this.pedidoService = pedidoService;
     }
 
     @PostMapping("/usuarios/{usuarioId}/items")
@@ -87,6 +93,18 @@ public class CarritoController {
 
         return ResponseEntity.ok(
                 CarritoResponse.from(carrito)
+        );
+    }
+
+    @PostMapping("/{id}/checkout")
+    public ResponseEntity<PedidoResponse> checkout(
+            @PathVariable Long id
+    ) {
+
+        Pedido pedido = pedidoService.checkout(id);
+
+        return ResponseEntity.ok(
+                PedidoResponse.from(pedido)
         );
     }
 }
