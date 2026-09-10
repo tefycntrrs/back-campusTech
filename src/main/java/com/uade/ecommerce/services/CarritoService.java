@@ -1,7 +1,6 @@
 package com.uade.ecommerce.services;
 
 import com.uade.ecommerce.dto.AgregarItemCarritoRequest;
-import com.uade.ecommerce.exception.ArgumentInvalidException;
 import com.uade.ecommerce.exception.ProductoNotFoundException;
 import com.uade.ecommerce.exception.ResourceNotFoundException;
 import com.uade.ecommerce.exception.UsuarioNotFoundException;
@@ -72,6 +71,12 @@ public class CarritoService {
                 )
                 .orElse(null);
 
+        ValidacionesStock.validarCantidadPositiva(
+                request.getCantidad()
+        );
+
+        ValidacionesStock.validarProductoActivo(producto);
+
         int nuevaCantidad;
 
         if (item == null) {
@@ -82,7 +87,7 @@ public class CarritoService {
                             + request.getCantidad();
         }
 
-        validarStock(
+        ValidacionesStock.validarStockSuficiente(
                 producto,
                 nuevaCantidad
         );
@@ -198,20 +203,5 @@ public class CarritoService {
         );
 
         return carritoRepository.save(carrito);
-    }
-
-    private void validarStock(
-            Producto producto,
-            int cantidad
-    ) {
-
-        if (cantidad > producto.getStock()) {
-
-            throw new ArgumentInvalidException(
-                    "cantidad",
-                    "No hay stock suficiente. Stock disponible: "
-                            + producto.getStock()
-            );
-        }
     }
 }

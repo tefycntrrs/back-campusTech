@@ -657,6 +657,232 @@
           }
         }
       ]
+    },
+    {
+      "name": "Carrito",
+      "item": [
+        {
+          "name": "Agregar item al carrito (200)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productoId\": 1,\n  \"cantidad\": 2\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8081/api/carritos/usuarios/1/items",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "carritos",
+                "usuarios",
+                "1",
+                "items"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Agregar item - producto inactivo (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productoId\": 3,\n  \"cantidad\": 1\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8081/api/carritos/usuarios/1/items",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "carritos",
+                "usuarios",
+                "1",
+                "items"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Agregar item - stock en cero (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productoId\": 2,\n  \"cantidad\": 1\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8081/api/carritos/usuarios/1/items",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "carritos",
+                "usuarios",
+                "1",
+                "items"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Agregar item - cantidad negativa (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productoId\": 1,\n  \"cantidad\": -3\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8081/api/carritos/usuarios/1/items",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "carritos",
+                "usuarios",
+                "1",
+                "items"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Agregar item - supera el stock (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productoId\": 1,\n  \"cantidad\": 999\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8081/api/carritos/usuarios/1/items",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "carritos",
+                "usuarios",
+                "1",
+                "items"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Obtener carrito activo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8081/api/carritos/usuarios/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "carritos",
+                "usuarios",
+                "1"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Eliminar item del carrito",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8081/api/carritos/usuarios/1/items/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "carritos",
+                "usuarios",
+                "1",
+                "items",
+                "1"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Vaciar carrito",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8081/api/carritos/usuarios/1/items",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "carritos",
+                "usuarios",
+                "1",
+                "items"
+              ]
+            }
+          }
+        }
+      ]
     }
   ]
 }
