@@ -1,17 +1,23 @@
 package com.uade.ecommerce.services;
 
 import com.uade.ecommerce.dto.CreateProductoRequest;
+import com.uade.ecommerce.dto.ImagenProductoRequest;
 import com.uade.ecommerce.exception.ArgumentInvalidException;
 import com.uade.ecommerce.exception.CategoriaNotFoundException;
 import com.uade.ecommerce.exception.DuplicateResourceException;
+import com.uade.ecommerce.exception.ForbiddenException;
 import com.uade.ecommerce.exception.MarcaNotFoundException;
 import com.uade.ecommerce.exception.ProductoNotFoundException;
+import com.uade.ecommerce.exception.UsuarioNotFoundException;
 import com.uade.ecommerce.model.Categoria;
 import com.uade.ecommerce.model.Marca;
 import com.uade.ecommerce.model.Producto;
+import com.uade.ecommerce.model.ProductoImagen;
+import com.uade.ecommerce.model.Usuario;
 import com.uade.ecommerce.repository.CategoriaRepository;
 import com.uade.ecommerce.repository.MarcaRepository;
 import com.uade.ecommerce.repository.ProductoRepository;
+import com.uade.ecommerce.repository.UsuarioRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
@@ -25,19 +31,22 @@ public class ProductoService {
     private final ProductoRepository productoRepository;
     private final CategoriaRepository categoriaRepository;
     private final MarcaRepository marcaRepository;
+    private final UsuarioRepository usuarioRepository;
 
     public ProductoService(
             ProductoRepository productoRepository,
             CategoriaRepository categoriaRepository,
-            MarcaRepository marcaRepository
+            MarcaRepository marcaRepository,
+            UsuarioRepository usuarioRepository
     ) {
         this.productoRepository = productoRepository;
         this.categoriaRepository = categoriaRepository;
         this.marcaRepository = marcaRepository;
+        this.usuarioRepository = usuarioRepository;
     }
 
-    public List<Producto> getAllProductos() {
-        return productoRepository.findAll();
+    public List<Producto> getCatalogo() {
+        return productoRepository.findByActivoTrueOrderByNombreAsc();
     }
 
     public Producto getProductoById(Long id) {
@@ -45,17 +54,28 @@ public class ProductoService {
                 .orElseThrow(() -> new ProductoNotFoundException(id));
     }
 
+    public Producto getProductoPublico(Long id) {
+        Producto producto = getProductoById(id);
+
+        if (Boolean.FALSE.equals(producto.getActivo())) {
+            throw new ProductoNotFoundException(id);
+        }
+
+        return producto;
+    }
+
     public List<Producto> getProductosByCategoria(Long categoriaId) {
         if (!categoriaRepository.existsById(categoriaId)) {
             throw new CategoriaNotFoundException(categoriaId);
         }
 
-        return productoRepository.findByCategoriaId(categoriaId);
+        return productoRepository.findActivosByCategoriaId(categoriaId);
     }
 
     public Producto createProducto(CreateProductoRequest request) {
         Categoria categoria = resolveCategoria(request.getCategoriaId());
         Marca marca = resolveMarca(request.getMarcaId());
+        Usuario vendedor = resolveVendedor(request.getUsuarioId());
 
         if (request.getNombre() == null || request.getNombre().isBlank()) {
             throw new ArgumentInvalidException("nombre", "El nombre del producto es obligatorio");
@@ -74,6 +94,10 @@ public class ProductoService {
         validarPrecio(request.getPrecio());
         validarStock(request.getStock());
 
+        if (request.getImagenes() == null || request.getImagenes().isEmpty()) {
+            throw new ArgumentInvalidException("imagenes", "El producto debe tener al menos una imagen");
+        }
+
         Producto producto = new Producto();
         producto.setNombre(request.getNombre());
         producto.setDescripcion(request.getDescripcion());
@@ -82,16 +106,20 @@ public class ProductoService {
         producto.setSku(sku);
         producto.setCategoria(categoria);
         producto.setMarca(marca);
+        producto.setVendedor(vendedor);
 
         if (request.getActivo() != null) {
             producto.setActivo(request.getActivo());
         }
 
+        reemplazarImagenes(producto, request.getImagenes());
+
         return productoRepository.save(producto);
     }
 
-    public Producto updateProducto(Long id, CreateProductoRequest request) {
+    public Producto updateProducto(Long id, Long usuarioId, CreateProductoRequest request) {
         Producto producto = getProductoById(id);
+        verificarPropietario(producto, usuarioId);
 
         String sku = null;
         if (request.getSku() != null) {
@@ -149,7 +177,61 @@ public class ProductoService {
             producto.setMarca(marca);
         }
 
+        if (request.getImagenes() != null) {
+            if (request.getImagenes().isEmpty()) {
+                throw new ArgumentInvalidException("imagenes", "El producto debe tener al menos una imagen");
+            }
+            reemplazarImagenes(producto, request.getImagenes());
+        }
+
         return productoRepository.save(producto);
+    }
+
+    public void eliminarProducto(Long id, Long usuarioId) {
+        Producto producto = getProductoById(id);
+        verificarPropietario(producto, usuarioId);
+
+        if (Boolean.FALSE.equals(producto.getActivo())) {
+            return;
+        }
+
+        producto.setActivo(false);
+        productoRepository.save(producto);
+    }
+
+    private void reemplazarImagenes(Producto producto, List<ImagenProductoRequest> imagenes) {
+
+        producto.limpiarImagenes();
+
+        boolean yaHayPrincipal = false;
+
+        for (int posicion = 0; posicion < imagenes.size(); posicion++) {
+
+            ImagenProductoRequest datos = imagenes.get(posicion);
+
+            if (datos == null || datos.getUrl() == null || datos.getUrl().isBlank()) {
+                throw new ArgumentInvalidException("imagenes", "Cada imagen necesita una url");
+            }
+
+            boolean principal = Boolean.TRUE.equals(datos.getPrincipal()) && !yaHayPrincipal;
+            yaHayPrincipal = yaHayPrincipal || principal;
+
+            Integer orden = datos.getOrden();
+            if (orden == null) {
+                orden = posicion;
+            }
+
+            ProductoImagen imagen = new ProductoImagen();
+            imagen.setUrl(datos.getUrl().trim());
+            imagen.setOrden(orden);
+            imagen.setPrincipal(principal);
+
+            producto.agregarImagen(imagen);
+        }
+
+        if (!yaHayPrincipal) {
+            producto.getImagenes().get(0).setPrincipal(true);
+        }
     }
 
     private void validarPrecio(BigDecimal precio) {
@@ -190,5 +272,29 @@ public class ProductoService {
         return marcaRepository
                 .findById(marcaId)
                 .orElseThrow(() -> new MarcaNotFoundException(marcaId));
+    }
+
+    private Usuario resolveVendedor(Long usuarioId) {
+        if (usuarioId == null) {
+            throw new ArgumentInvalidException("usuarioId", "El usuario que publica el producto es obligatorio");
+        }
+
+        return usuarioRepository
+                .findById(usuarioId)
+                .orElseThrow(() -> new UsuarioNotFoundException(usuarioId));
+    }
+
+    private void verificarPropietario(Producto producto, Long usuarioId) {
+        if (usuarioId == null) {
+            throw new ArgumentInvalidException("usuarioId", "Falta indicar el usuario que realiza la operación");
+        }
+
+        if (!usuarioRepository.existsById(usuarioId)) {
+            throw new UsuarioNotFoundException(usuarioId);
+        }
+
+        if (!producto.perteneceA(usuarioId)) {
+            throw new ForbiddenException("El producto pertenece a otro usuario");
+        }
     }
 }

@@ -3,6 +3,7 @@ package com.uade.ecommerce.dto;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 /**
  * DTO de entrada del producto: lo usan POST /api/productos y PUT /api/productos/{id}.
@@ -33,4 +34,7 @@ public class CreateProductoRequest {
     // Ids de las relaciones. Obligatorios al crear; opcionales al actualizar
     private Long categoriaId;
     private Long marcaId;
+    private Long usuarioId;
+
+    private List<ImagenProductoRequest> imagenes;
 }

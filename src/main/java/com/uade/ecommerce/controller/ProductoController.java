@@ -23,10 +23,10 @@ public class ProductoController {
     }
 
     @GetMapping
-    public ResponseEntity<List<ProductoResponse>> getAllProductos() {
+    public ResponseEntity<List<ProductoResponse>> getCatalogo() {
 
         List<ProductoResponse> productos = productoService
-                .getAllProductos()
+                .getCatalogo()
                 .stream()
                 .map(ProductoResponse::from)
                 .toList();
@@ -45,7 +45,7 @@ public class ProductoController {
             @PathVariable Long id
     ) {
 
-        Producto producto = productoService.getProductoById(id);
+        Producto producto = productoService.getProductoPublico(id);
 
         return ResponseEntity.ok(
                 ProductoResponse.from(producto)
@@ -74,14 +74,26 @@ public class ProductoController {
     @PutMapping("/{id}")
     public ResponseEntity<ProductoResponse> updateProducto(
             @PathVariable Long id,
+            @RequestParam(required = false) Long usuarioId,
             @RequestBody CreateProductoRequest request
     ) {
 
         Producto producto =
-                productoService.updateProducto(id, request);
+                productoService.updateProducto(id, usuarioId, request);
 
         return ResponseEntity.ok(
                 ProductoResponse.from(producto)
         );
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> eliminarProducto(
+            @PathVariable Long id,
+            @RequestParam(required = false) Long usuarioId
+    ) {
+
+        productoService.eliminarProducto(id, usuarioId);
+
+        return ResponseEntity.noContent().build();
     }
 }

@@ -7,7 +7,13 @@ Base de datos: **MySQL** (credenciales por variables de entorno `DB_URL`, `DB_US
 Para probar sin MySQL hay un perfil con H2 embebida:
 `mvnw spring-boot:run -Dspring-boot.run.profiles=h2` (la base queda en `target/h2/ecommerce.mv.db`).
 
-Los productos pertenecen a una **categoría** y a una **marca**. Primero hay que crear categoría y marca; después el producto con `categoriaId` y `marcaId`. En las respuestas, el producto expone `categoriaId` y el objeto `marca`.
+Los productos pertenecen a una **categoría** y a una **marca**. Primero hay que crear categoría y marca; después el producto con `categoriaId` y `marcaId`. En las respuestas, el producto expone `categoriaId` / `categoriaNombre` y `marcaId` / `marcaNombre`.
+
+Cada producto tiene un **usuario vendedor** (el que lo publica, `usuarioId` al crear). Solo ese usuario puede **modificar el producto** (incluido el stock) y **darlo de baja**; las dos operaciones piden `usuarioId` como query param y responden **403** si no coincide con el vendedor. En las respuestas el producto expone `vendedorId` / `vendedorNombre`.
+
+El **catálogo** (`GET /api/productos` y `GET /api/categorias/{id}/productos`) devuelve **solo productos activos**, ordenados **alfabéticamente por nombre**. Un producto dado de baja desaparece del catálogo y del detalle (**404**).
+
+Cada producto tiene una **galería de imágenes** (al menos una, obligatoria al publicar). En esta fase solo se guardan **URLs**: no hay carga ni almacenamiento de archivos. La galería se maneja entera desde el producto (no tiene endpoints propios).
 
 ---
 
@@ -19,8 +25,9 @@ Todos los endpoints devuelven `ResponseEntity`, así que el código HTTP es expl
 |--------|--------|
 | 200 OK | GET y PUT con resultado |
 | 201 Created | POST: devuelve el recurso creado y el header `Location` |
-| 204 No Content | GET de lista cuando todavía no hay elementos (cuerpo vacío) |
+| 204 No Content | GET de lista sin elementos, o DELETE aplicado (cuerpo vacío) |
 | 400 Bad Request | Datos inválidos (`ArgumentInvalidException` o `@Valid`) |
+| 403 Forbidden | El recurso existe pero pertenece a otro usuario (`ForbiddenException`) |
 | 404 Not Found | Recurso inexistente (`ResourceNotFoundException`) |
 | 409 Conflict | Valor único repetido (`DuplicateResourceException`) |
 | 500 Internal Server Error | Error inesperado |
@@ -64,6 +71,7 @@ Cuando el error es por campos concretos se agrega el objeto `errores` con el det
 |-----------|------|-----------|
 | `ResourceNotFoundException` | 404 | Base de `ProductoNotFoundException`, `CategoriaNotFoundException`, `MarcaNotFoundException`, `UsuarioNotFoundException` |
 | `ArgumentInvalidException` | 400 | Reglas de negocio: campos obligatorios, precio, stock, edad |
+| `ForbiddenException` | 403 | Modificar o eliminar una publicación de producto que es de otro usuario |
 | `DuplicateResourceException` | 409 | Email, SKU o nombre ya usados |
 
 ---
@@ -178,31 +186,9 @@ Si el id no existe → **404**. Si el nombre ya lo usa otra categoría → **409
 
 `GET /api/categorias/{id}/productos`
 
-Si la categoría no existe → **404**.
+Si la categoría no existe → **404**. Devuelve **solo productos activos**, ordenados **alfabéticamente por nombre**.
 
-**Respuesta 200**
-
-```json
-[
-  {
-    "id": 1,
-    "nombre": "MacBook Air 13 M3",
-    "descripcion": "Chip M3, 16 GB RAM, 512 GB SSD",
-    "precio": 1899999.00,
-    "stock": 8,
-    "sku": "MBA-M3-512",
-    "activo": true,
-    "marca": {
-      "id": 1,
-      "nombre": "Apple",
-      "activo": true
-    },
-    "createdAt": "2026-09-03T19:00:00",
-    "updatedAt": "2026-09-03T19:00:00",
-    "categoriaId": 1
-  }
-]
-```
+**Respuesta 200**: misma estructura que `GET /api/productos` (ver la sección Productos), o **204 No Content** si la categoría no tiene productos activos.
 
 ---
 
@@ -311,13 +297,13 @@ Si el id no existe → **404**. Si el nombre ya lo usa otra marca → **409**.
 
 ## Productos
 
-### Listar productos
+### Listar productos (catálogo)
 
-Lista todos los productos. Para filtrar por categoría: `GET /api/categorias/{id}/productos`.
+Devuelve **solo productos activos**, ordenados **alfabéticamente por nombre**. Para filtrar por categoría: `GET /api/categorias/{id}/productos` (mismos criterios).
 
 `GET /api/productos`
 
-**Respuesta 200**
+**Respuesta 200** con la lista, o **204 No Content** si no hay productos activos.
 
 ```json
 [
@@ -329,53 +315,41 @@ Lista todos los productos. Para filtrar por categoría: `GET /api/categorias/{id
     "stock": 8,
     "sku": "MBA-M3-512",
     "activo": true,
-    "marca": {
-      "id": 1,
-      "nombre": "Apple",
-      "activo": true
-    },
+    "categoriaId": 1,
+    "categoriaNombre": "Notebooks",
+    "marcaId": 1,
+    "marcaNombre": "Apple",
+    "vendedorId": 1,
+    "vendedorNombre": "Pedro Marzano",
+    "imagenes": [
+      { "id": 1, "url": "https://cdn.ejemplo.com/mba-m3/frente.jpg", "orden": 0, "principal": true },
+      { "id": 2, "url": "https://cdn.ejemplo.com/mba-m3/lateral.jpg", "orden": 1, "principal": false }
+    ],
     "createdAt": "2026-09-03T19:00:00",
-    "updatedAt": "2026-09-03T19:00:00",
-    "categoriaId": 1
+    "updatedAt": "2026-09-03T19:00:00"
   }
 ]
 ```
 
+`imagenes` viene ordenada por `orden` ascendente y siempre trae exactamente una imagen con `principal: true` (la portada).
+
 ---
 
-### Obtener un producto
+### Obtener un producto (detalle)
 
 `GET /api/productos/{id}`
 
-Si no existe → **404**. Si el id no es numérico → **400**.
+Detalle completo: descripción, galería de imágenes y datos del vendedor.
 
-**Respuesta 200**
+Si no existe, o si fue dado de baja → **404**. Si el id no es numérico → **400**.
 
-```json
-{
-  "id": 1,
-  "nombre": "MacBook Air 13 M3",
-  "descripcion": "Chip M3, 16 GB RAM, 512 GB SSD",
-  "precio": 1899999.00,
-  "stock": 8,
-  "sku": "MBA-M3-512",
-  "activo": true,
-  "marca": {
-    "id": 1,
-    "nombre": "Apple",
-    "activo": true
-  },
-  "createdAt": "2026-09-03T19:00:00",
-  "updatedAt": "2026-09-03T19:00:00",
-  "categoriaId": 1
-}
-```
+**Respuesta 200**: mismo objeto que en el listado.
 
 ---
 
 ### Crear un producto
 
-`categoriaId`, `marcaId` y `sku` son obligatorios (categoría y marca deben existir; el SKU es único).
+`categoriaId`, `marcaId`, `usuarioId`, `sku` e `imagenes` (al menos una) son obligatorios. Categoría, marca y usuario deben existir; el SKU es único. El `usuarioId` es el **vendedor**: el único que después va a poder modificar o dar de baja el producto.
 
 `POST /api/productos`
 
@@ -389,33 +363,23 @@ Si no existe → **404**. Si el id no es numérico → **400**.
   "stock": 8,
   "sku": "MBA-M3-512",
   "categoriaId": 1,
-  "marcaId": 1
+  "marcaId": 1,
+  "usuarioId": 1,
+  "imagenes": [
+    { "url": "https://cdn.ejemplo.com/mba-m3/frente.jpg", "principal": true },
+    { "url": "https://cdn.ejemplo.com/mba-m3/lateral.jpg" }
+  ]
 }
 ```
+
+De cada imagen solo `url` es obligatoria. `orden` (entero) y `principal` (boolean) son opcionales:
+
+- Si no mandás `orden`, se usa la posición en la lista (0, 1, 2…).
+- Si ninguna imagen trae `principal: true`, la primera queda como portada. Si mandás varias, se respeta solo la primera.
 
 **Respuesta 201 Created**
 
-Header `Location` con la URL del recurso creado.
-
-```json
-{
-  "id": 1,
-  "nombre": "MacBook Air 13 M3",
-  "descripcion": "Chip M3, 16 GB RAM, 512 GB SSD",
-  "precio": 1899999.00,
-  "stock": 8,
-  "sku": "MBA-M3-512",
-  "activo": true,
-  "marca": {
-    "id": 1,
-    "nombre": "Apple",
-    "activo": true
-  },
-  "createdAt": "2026-09-03T19:00:00",
-  "updatedAt": "2026-09-03T19:00:00",
-  "categoriaId": 1
-}
-```
+Header `Location` con la URL del recurso creado. El cuerpo es el mismo objeto que devuelve `GET /api/productos/{id}`.
 
 **Errores**
 
@@ -425,6 +389,10 @@ Header `Location` con la URL del recurso creado.
 | Falta `sku` | 400 | El SKU es obligatorio |
 | Falta `categoriaId` | 400 | La categoría es obligatoria |
 | Falta `marcaId` | 400 | La marca es obligatoria |
+| Falta `usuarioId` | 400 | El usuario que publica el producto es obligatorio |
+| Usuario inexistente | 404 | El usuario con id X no existe |
+| `imagenes` vacío o ausente | 400 | El producto debe tener al menos una imagen |
+| Una imagen sin `url` | 400 | Cada imagen necesita una url |
 | `precio` nulo o menor o igual a 0 | 400 | El precio debe ser mayor a 0 |
 | `stock` nulo o negativo | 400 | El stock no puede ser negativo |
 | Categoría inexistente | 404 | La categoría con id X no existe |
@@ -433,13 +401,25 @@ Header `Location` con la URL del recurso creado.
 
 ---
 
-### Actualizar un producto
+### Actualizar un producto / gestión de stock
 
 Actualización parcial: solo se modifican los campos que mandes. El resto queda igual.
+Sirve también para la **gestión de stock** (mandás solo `stock`).
 
-`PUT /api/productos/{id}`
+**Solo el usuario vendedor** puede actualizar el producto: `usuarioId` va como query param
+y tiene que coincidir con el vendedor. Si no coincide → **403**.
 
-**Body (ejemplo: solo precio y stock)**
+`PUT /api/productos/{id}?usuarioId={usuarioId}`
+
+**Body (ejemplo: gestión de stock)**
+
+```json
+{
+  "stock": 5
+}
+```
+
+**Body (ejemplo: precio y stock)**
 
 ```json
 {
@@ -448,23 +428,50 @@ Actualización parcial: solo se modifican los campos que mandes. El resto queda 
 }
 ```
 
-**Body (ejemplo: cambiar categoría y desactivar)**
+**Body (ejemplo: reemplazar la galería)**
 
 ```json
 {
-  "categoriaId": 2,
-  "activo": false
+  "imagenes": [
+    { "url": "https://cdn.ejemplo.com/mba-m3/nueva-portada.jpg", "principal": true },
+    { "url": "https://cdn.ejemplo.com/mba-m3/detalle.jpg" }
+  ]
 }
 ```
+
+Si mandás `imagenes`, **reemplaza la galería completa** (borra las anteriores). Si no mandás el campo, la galería queda como estaba. Mandar `"imagenes": []` da **400** (un producto no puede quedar sin imágenes).
 
 **Respuesta 200**: el producto actualizado (`updatedAt` se refresca solo).
 
 | Situación | Código |
 |-----------|--------|
+| Falta `usuarioId`, o el usuario no existe | 400 / 404 |
+| El producto es de otro usuario | 403 |
 | Producto inexistente | 404 |
 | Categoría/marca inexistente | 404 |
 | SKU vacío | 400 |
 | SKU duplicado en otro producto | 409 |
+| `imagenes` presente pero vacío, o una imagen sin `url` | 400 |
+
+---
+
+### Eliminar un producto
+
+**Baja lógica**: el producto se marca como inactivo (`activo: false`), sale del catálogo y
+del detalle, pero no se borra de la base para no romper los carritos que ya lo referencian.
+
+**Solo el usuario vendedor** puede darlo de baja: `usuarioId` va como query param.
+
+`DELETE /api/productos/{id}?usuarioId={usuarioId}`
+
+**Respuesta 204 No Content** (sin cuerpo). Es idempotente: dar de baja algo ya inactivo
+vuelve a responder 204.
+
+| Situación | Código |
+|-----------|--------|
+| Falta `usuarioId`, o el usuario no existe | 400 / 404 |
+| El producto es de otro usuario | 403 |
+| Producto inexistente | 404 |
 
 ---
 
@@ -572,6 +579,8 @@ Si no existe → **404**.
 1. `POST /api/usuarios/registro`
 2. `POST /api/categorias`
 3. `POST /api/marcas`
-4. `POST /api/productos` (con `categoriaId` y `marcaId`)
-5. `PUT /api/productos/{id}` / `PUT /api/categorias/{id}` / `PUT /api/marcas/{id}` cuando haga falta
-6. `GET /api/productos` o `GET /api/categorias/{id}/productos`
+4. `POST /api/productos` (con `categoriaId`, `marcaId`, `usuarioId` y al menos una imagen en `imagenes`)
+5. `PUT /api/productos/{id}?usuarioId=...` para editar el producto o su stock (solo el vendedor)
+6. `DELETE /api/productos/{id}?usuarioId=...` para dar de baja la publicación (solo el vendedor)
+7. `GET /api/productos` o `GET /api/categorias/{id}/productos` para ver el catálogo (activos, alfabético)
+8. `GET /api/productos/{id}` para el detalle
