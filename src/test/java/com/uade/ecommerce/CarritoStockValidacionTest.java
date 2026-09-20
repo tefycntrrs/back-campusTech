@@ -1,16 +1,16 @@
 package com.uade.ecommerce;
 
-import com.uade.ecommerce.model.Categoria;
-import com.uade.ecommerce.model.Marca;
-import com.uade.ecommerce.model.Producto;
-import com.uade.ecommerce.model.Sexo;
-import com.uade.ecommerce.model.Usuario;
-import com.uade.ecommerce.repository.CarritoRepository;
-import com.uade.ecommerce.repository.CategoriaRepository;
-import com.uade.ecommerce.repository.ItemCarritoRepository;
-import com.uade.ecommerce.repository.MarcaRepository;
-import com.uade.ecommerce.repository.ProductoRepository;
-import com.uade.ecommerce.repository.UsuarioRepository;
+import com.uade.ecommerce.catalogo.model.Categoria;
+import com.uade.ecommerce.catalogo.model.Marca;
+import com.uade.ecommerce.catalogo.model.Producto;
+import com.uade.ecommerce.identidad.model.Sexo;
+import com.uade.ecommerce.identidad.model.Usuario;
+import com.uade.ecommerce.compras.repository.CarritoRepository;
+import com.uade.ecommerce.catalogo.repository.CategoriaRepository;
+import com.uade.ecommerce.compras.repository.ItemCarritoRepository;
+import com.uade.ecommerce.catalogo.repository.MarcaRepository;
+import com.uade.ecommerce.catalogo.repository.ProductoRepository;
+import com.uade.ecommerce.identidad.repository.UsuarioRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

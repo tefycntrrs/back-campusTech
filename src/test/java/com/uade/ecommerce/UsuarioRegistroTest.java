@@ -1,8 +1,8 @@
 package com.uade.ecommerce;
 
-import com.uade.ecommerce.model.Sexo;
-import com.uade.ecommerce.model.Usuario;
-import com.uade.ecommerce.repository.UsuarioRepository;
+import com.uade.ecommerce.identidad.model.Sexo;
+import com.uade.ecommerce.identidad.model.Usuario;
+import com.uade.ecommerce.identidad.repository.UsuarioRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

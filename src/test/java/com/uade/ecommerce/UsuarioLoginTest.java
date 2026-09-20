@@ -1,6 +1,6 @@
 package com.uade.ecommerce;
 
-import com.uade.ecommerce.repository.UsuarioRepository;
+import com.uade.ecommerce.identidad.repository.UsuarioRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
