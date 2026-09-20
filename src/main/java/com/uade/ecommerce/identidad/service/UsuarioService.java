@@ -4,14 +4,14 @@ import com.uade.ecommerce.identidad.dto.CreateUsuarioRequest;
 import com.uade.ecommerce.identidad.dto.LoginRequest;
 import com.uade.ecommerce.identidad.dto.LoginResponse;
 import com.uade.ecommerce.identidad.dto.UsuarioResponse;
-import com.uade.ecommerce.identidad.model.Usuario;
-import com.uade.ecommerce.identidad.repository.UsuarioRepository;
 import com.uade.ecommerce.shared.exception.ArgumentInvalidException;
 import com.uade.ecommerce.shared.exception.CredencialesInvalidasException;
 import com.uade.ecommerce.shared.exception.DuplicateResourceException;
 import com.uade.ecommerce.shared.exception.UsuarioNotFoundException;
+import com.uade.ecommerce.identidad.model.Usuario;
+import com.uade.ecommerce.identidad.repository.UsuarioRepository;
 import jakarta.transaction.Transactional;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -26,10 +26,11 @@ public class UsuarioService {
     private static final int EDAD_MAXIMA = 120;
 
     private final UsuarioRepository usuarioRepository;
-    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    private final PasswordEncoder passwordEncoder;
 
-    public UsuarioService(UsuarioRepository usuarioRepository) {
+    public UsuarioService(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder) {
         this.usuarioRepository = usuarioRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public List<UsuarioResponse> getAllUsuarios() {
