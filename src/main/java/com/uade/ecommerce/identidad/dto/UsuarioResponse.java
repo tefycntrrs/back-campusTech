@@ -1,12 +1,15 @@
 package com.uade.ecommerce.identidad.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.uade.ecommerce.identidad.model.Rol;
 import com.uade.ecommerce.identidad.model.Sexo;
 import com.uade.ecommerce.identidad.model.Usuario;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Period;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * DTO de salida del usuario: es lo que devuelven todos los endpoints de /api/usuarios.
@@ -30,7 +33,8 @@ public record UsuarioResponse(
         Integer edad,
         Sexo sexo,
         Boolean activo,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        Set<String> roles
 ) {
 
     /** Convierte la entidad al DTO. Lo usa el controller tanto para uno como para la lista. */
@@ -39,6 +43,11 @@ public record UsuarioResponse(
         Integer edad = usuario.getFechaNacimiento() == null
                 ? null
                 : Period.between(usuario.getFechaNacimiento(), LocalDate.now()).getYears();
+
+        Set<String> roles = new TreeSet<>();
+        for (Rol rol : usuario.getRoles()) {
+            roles.add(rol.getNombre().name());
+        }
 
         return new UsuarioResponse(
                 usuario.getId(),
@@ -50,7 +59,8 @@ public record UsuarioResponse(
                 edad,
                 usuario.getSexo(),
                 usuario.getActivo(),
-                usuario.getCreatedAt()
+                usuario.getCreatedAt(),
+                roles
         );
     }
 }

@@ -8,7 +8,10 @@ import com.uade.ecommerce.shared.exception.ArgumentInvalidException;
 import com.uade.ecommerce.shared.exception.CredencialesInvalidasException;
 import com.uade.ecommerce.shared.exception.DuplicateResourceException;
 import com.uade.ecommerce.shared.exception.UsuarioNotFoundException;
+import com.uade.ecommerce.identidad.model.NombreRol;
+import com.uade.ecommerce.identidad.model.Rol;
 import com.uade.ecommerce.identidad.model.Usuario;
+import com.uade.ecommerce.identidad.repository.RolRepository;
 import com.uade.ecommerce.identidad.repository.UsuarioRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -16,7 +19,9 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.Period;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @Transactional
@@ -26,10 +31,16 @@ public class UsuarioService {
     private static final int EDAD_MAXIMA = 120;
 
     private final UsuarioRepository usuarioRepository;
+    private final RolRepository rolRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public UsuarioService(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder) {
+    public UsuarioService(
+            UsuarioRepository usuarioRepository,
+            RolRepository rolRepository,
+            PasswordEncoder passwordEncoder
+    ) {
         this.usuarioRepository = usuarioRepository;
+        this.rolRepository = rolRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -87,14 +98,19 @@ public class UsuarioService {
 
         validarFechaNacimiento(request.getFechaNacimiento());
 
-        Usuario usuario = new Usuario();
-        usuario.setNombre(request.getNombre().trim());
-        usuario.setApellido(request.getApellido().trim());
-        usuario.setUsername(username);
-        usuario.setEmail(email);
-        usuario.setPassword(passwordEncoder.encode(request.getPassword()));
-        usuario.setFechaNacimiento(request.getFechaNacimiento());
-        usuario.setSexo(request.getSexo());
+        Rol rolPorDefecto = rolRepository.findByNombre(NombreRol.USER)
+                .orElseGet(() -> rolRepository.save(new Rol(NombreRol.USER)));
+
+        Usuario usuario = Usuario.builder()
+                .nombre(request.getNombre().trim())
+                .apellido(request.getApellido().trim())
+                .username(username)
+                .email(email)
+                .password(passwordEncoder.encode(request.getPassword()))
+                .fechaNacimiento(request.getFechaNacimiento())
+                .sexo(request.getSexo())
+                .roles(new LinkedHashSet<>(Set.of(rolPorDefecto)))
+                .build();
 
         return UsuarioResponse.from(usuarioRepository.save(usuario));
     }
