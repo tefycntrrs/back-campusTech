@@ -2,7 +2,8 @@
   "info": {
     "_postman_id": "e0000000-0000-4000-8000-000000000001",
     "name": "Ecommerce Group 1",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "API del TPO - Parte 2, con Spring Security + JWT.\n\nCómo usarla: corré 'Login (200)' en la carpeta Usuarios. El token queda guardado en la variable {{token}} y el resto de los requests lo mandan solos como 'Authorization: Bearer', porque la colección tiene ese auth configurado a nivel raíz.\n\nLos endpoints públicos (registro, login y los GET del catálogo) están marcados como 'No Auth'.\n\nEn la carpeta Seguridad hay un segundo usuario ({{tokenOtro}}) y un admin ({{tokenAdmin}}) para probar los 401 y los 403. El rol ADMIN se asigna en la base (tabla usuario_roles): no hay endpoint que lo otorgue."
   },
   "item": [
     {
@@ -34,6 +35,9 @@
                 "usuarios",
                 "registro"
               ]
+            },
+            "auth": {
+              "type": "noauth"
             }
           }
         },
@@ -63,6 +67,9 @@
                 "usuarios",
                 "registro"
               ]
+            },
+            "auth": {
+              "type": "noauth"
             }
           }
         },
@@ -92,6 +99,9 @@
                 "usuarios",
                 "registro"
               ]
+            },
+            "auth": {
+              "type": "noauth"
             }
           }
         },
@@ -121,11 +131,14 @@
                 "usuarios",
                 "registro"
               ]
+            },
+            "auth": {
+              "type": "noauth"
             }
           }
         },
         {
-          "name": "Listar usuarios",
+          "name": "Listar usuarios (ADMIN)",
           "request": {
             "method": "GET",
             "header": [],
@@ -139,6 +152,16 @@
               "path": [
                 "api",
                 "usuarios"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
               ]
             }
           }
@@ -257,7 +280,7 @@
           }
         },
         {
-          "name": "Login (200)",
+          "name": "Login (200) - guarda {{token}}",
           "request": {
             "method": "POST",
             "header": [
@@ -282,8 +305,28 @@
                 "usuarios",
                 "login"
               ]
+            },
+            "auth": {
+              "type": "noauth"
             }
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Guarda el JWT del login en una variable de la colección,",
+                  "// así el resto de los requests lo usan solos via el auth de la coleccion.",
+                  "var data = pm.response.json();",
+                  "if (data.token) {",
+                  "    pm.collectionVariables.set(\"token\", data.token);",
+                  "    console.log(\"token guardado\");",
+                  "}"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Login - credenciales invalidas (401)",
@@ -311,6 +354,9 @@
                 "usuarios",
                 "login"
               ]
+            },
+            "auth": {
+              "type": "noauth"
             }
           }
         }
@@ -320,7 +366,7 @@
       "name": "Categorías",
       "item": [
         {
-          "name": "Crear categoría",
+          "name": "Crear categoría (ADMIN)",
           "request": {
             "method": "POST",
             "header": [
@@ -344,11 +390,21 @@
                 "api",
                 "categorias"
               ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
             }
           }
         },
         {
-          "name": "Crear categoría - sin nombre (400)",
+          "name": "Crear categoría - sin nombre (400) (ADMIN)",
           "request": {
             "method": "POST",
             "header": [
@@ -372,6 +428,16 @@
                 "api",
                 "categorias"
               ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
             }
           }
         },
@@ -391,6 +457,9 @@
                 "api",
                 "categorias"
               ]
+            },
+            "auth": {
+              "type": "noauth"
             }
           }
         },
@@ -411,6 +480,9 @@
                 "categorias",
                 "1"
               ]
+            },
+            "auth": {
+              "type": "noauth"
             }
           }
         },
@@ -431,11 +503,14 @@
                 "categorias",
                 "999"
               ]
+            },
+            "auth": {
+              "type": "noauth"
             }
           }
         },
         {
-          "name": "Actualizar categoría",
+          "name": "Actualizar categoría (ADMIN)",
           "request": {
             "method": "PUT",
             "header": [
@@ -460,6 +535,16 @@
                 "categorias",
                 "1"
               ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
             }
           }
         },
@@ -481,6 +566,9 @@
                 "1",
                 "productos"
               ]
+            },
+            "auth": {
+              "type": "noauth"
             }
           }
         }
@@ -490,7 +578,7 @@
       "name": "Marcas",
       "item": [
         {
-          "name": "Crear marca",
+          "name": "Crear marca (ADMIN)",
           "request": {
             "method": "POST",
             "header": [
@@ -514,6 +602,16 @@
                 "api",
                 "marcas"
               ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
             }
           }
         },
@@ -533,6 +631,9 @@
                 "api",
                 "marcas"
               ]
+            },
+            "auth": {
+              "type": "noauth"
             }
           }
         },
@@ -553,11 +654,14 @@
                 "marcas",
                 "1"
               ]
+            },
+            "auth": {
+              "type": "noauth"
             }
           }
         },
         {
-          "name": "Actualizar marca",
+          "name": "Actualizar marca (ADMIN)",
           "request": {
             "method": "PUT",
             "header": [
@@ -582,6 +686,16 @@
                 "marcas",
                 "1"
               ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
             }
           }
         }
@@ -602,7 +716,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nombre\": \"MacBook Air 13 M3\",\n  \"descripcion\": \"Chip M3, 16 GB RAM, 512 GB SSD\",\n  \"precio\": 1899999,\n  \"stock\": 8,\n  \"sku\": \"MBA-M3-512\",\n  \"categoriaIds\": [1, 2],\n  \"marcaId\": 1,\n  \"vendedorId\": 1,\n  \"imagenes\": [\n    { \"url\": \"https://cdn.ejemplo.com/mba-m3/frente.jpg\", \"principal\": true },\n    { \"url\": \"https://cdn.ejemplo.com/mba-m3/lateral.jpg\" }\n  ]\n}"
+              "raw": "{\n  \"nombre\": \"MacBook Air 13 M3\",\n  \"descripcion\": \"Chip M3, 16 GB RAM, 512 GB SSD\",\n  \"precio\": 1899999,\n  \"stock\": 8,\n  \"sku\": \"MBA-M3-512\",\n  \"categoriaIds\": [1, 2],\n  \"marcaId\": 1,\n  \"imagenes\": [\n    { \"url\": \"https://cdn.ejemplo.com/mba-m3/frente.jpg\", \"principal\": true },\n    { \"url\": \"https://cdn.ejemplo.com/mba-m3/lateral.jpg\" }\n  ]\n}"
             },
             "url": {
               "raw": "http://localhost:8081/api/productos",
@@ -630,7 +744,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nombre\": \"MacBook Air 13 M3\",\n  \"precio\": 1899999,\n  \"stock\": 8,\n  \"sku\": \"MBA-M3-777\",\n  \"categoriaIds\": [1],\n  \"marcaId\": 1,\n  \"vendedorId\": 1\n}"
+              "raw": "{\n  \"nombre\": \"MacBook Air 13 M3\",\n  \"precio\": 1899999,\n  \"stock\": 8,\n  \"sku\": \"MBA-M3-777\",\n  \"categoriaIds\": [1],\n  \"marcaId\": 1,\n}"
             },
             "url": {
               "raw": "http://localhost:8081/api/productos",
@@ -658,7 +772,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nombre\": \"MacBook Air 13 M3\",\n  \"precio\": 1899999,\n  \"stock\": 8,\n  \"categoriaIds\": [1],\n  \"marcaId\": 1,\n  \"vendedorId\": 1,\n  \"imagenes\": [\n    { \"url\": \"https://cdn.ejemplo.com/mba-m3/frente.jpg\", \"principal\": true }\n  ]\n}"
+              "raw": "{\n  \"nombre\": \"MacBook Air 13 M3\",\n  \"precio\": 1899999,\n  \"stock\": 8,\n  \"categoriaIds\": [1],\n  \"marcaId\": 1,\n  \"imagenes\": [\n    { \"url\": \"https://cdn.ejemplo.com/mba-m3/frente.jpg\", \"principal\": true }\n  ]\n}"
             },
             "url": {
               "raw": "http://localhost:8081/api/productos",
@@ -686,7 +800,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nombre\": \"MacBook Air 13 M3\",\n  \"precio\": 1899999,\n  \"stock\": 8,\n  \"sku\": \"MBA-M3-999\",\n  \"categoriaIds\": [99],\n  \"marcaId\": 1,\n  \"vendedorId\": 1,\n  \"imagenes\": [\n    { \"url\": \"https://cdn.ejemplo.com/mba-m3/frente.jpg\", \"principal\": true }\n  ]\n}"
+              "raw": "{\n  \"nombre\": \"MacBook Air 13 M3\",\n  \"precio\": 1899999,\n  \"stock\": 8,\n  \"sku\": \"MBA-M3-999\",\n  \"categoriaIds\": [99],\n  \"marcaId\": 1,\n  \"imagenes\": [\n    { \"url\": \"https://cdn.ejemplo.com/mba-m3/frente.jpg\", \"principal\": true }\n  ]\n}"
             },
             "url": {
               "raw": "http://localhost:8081/api/productos",
@@ -718,6 +832,9 @@
                 "api",
                 "productos"
               ]
+            },
+            "auth": {
+              "type": "noauth"
             }
           }
         },
@@ -738,6 +855,9 @@
                 "productos",
                 "1"
               ]
+            },
+            "auth": {
+              "type": "noauth"
             }
           }
         },
@@ -758,6 +878,9 @@
                 "productos",
                 "777"
               ]
+            },
+            "auth": {
+              "type": "noauth"
             }
           }
         },
@@ -776,7 +899,7 @@
               "raw": "{\n  \"stock\": 5\n}"
             },
             "url": {
-              "raw": "http://localhost:8081/api/productos/1?usuarioId=1",
+              "raw": "http://localhost:8081/api/productos/1",
               "protocol": "http",
               "host": [
                 "localhost"
@@ -786,12 +909,6 @@
                 "api",
                 "productos",
                 "1"
-              ],
-              "query": [
-                {
-                  "key": "usuarioId",
-                  "value": "1"
-                }
               ]
             }
           }
@@ -811,7 +928,7 @@
               "raw": "{\n  \"stock\": 0\n}"
             },
             "url": {
-              "raw": "http://localhost:8081/api/productos/1?usuarioId=2",
+              "raw": "http://localhost:8081/api/productos/1",
               "protocol": "http",
               "host": [
                 "localhost"
@@ -821,11 +938,15 @@
                 "api",
                 "productos",
                 "1"
-              ],
-              "query": [
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
                 {
-                  "key": "usuarioId",
-                  "value": "2"
+                  "key": "token",
+                  "value": "{{tokenOtro}}",
+                  "type": "string"
                 }
               ]
             }
@@ -846,7 +967,7 @@
               "raw": "{\n  \"imagenes\": [\n    { \"url\": \"https://cdn.ejemplo.com/mba-m3/nueva-portada.jpg\", \"principal\": true },\n    { \"url\": \"https://cdn.ejemplo.com/mba-m3/detalle.jpg\" }\n  ]\n}"
             },
             "url": {
-              "raw": "http://localhost:8081/api/productos/1?usuarioId=1",
+              "raw": "http://localhost:8081/api/productos/1",
               "protocol": "http",
               "host": [
                 "localhost"
@@ -856,12 +977,6 @@
                 "api",
                 "productos",
                 "1"
-              ],
-              "query": [
-                {
-                  "key": "usuarioId",
-                  "value": "1"
-                }
               ]
             }
           }
@@ -872,7 +987,7 @@
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "http://localhost:8081/api/productos/1?usuarioId=1",
+              "raw": "http://localhost:8081/api/productos/1",
               "protocol": "http",
               "host": [
                 "localhost"
@@ -882,12 +997,6 @@
                 "api",
                 "productos",
                 "1"
-              ],
-              "query": [
-                {
-                  "key": "usuarioId",
-                  "value": "1"
-                }
               ]
             }
           }
@@ -898,7 +1007,7 @@
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "http://localhost:8081/api/productos/1?usuarioId=2",
+              "raw": "http://localhost:8081/api/productos/1",
               "protocol": "http",
               "host": [
                 "localhost"
@@ -908,11 +1017,15 @@
                 "api",
                 "productos",
                 "1"
-              ],
-              "query": [
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
                 {
-                  "key": "usuarioId",
-                  "value": "2"
+                  "key": "token",
+                  "value": "{{tokenOtro}}",
+                  "type": "string"
                 }
               ]
             }
@@ -1188,6 +1301,624 @@
           }
         }
       ]
+    },
+    {
+      "name": "Seguridad",
+      "item": [
+        {
+          "name": "1. Registrar segundo usuario (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8081/api/usuarios/registro",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "usuarios",
+                "registro"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Ana\",\n  \"apellido\": \"Gomez\",\n  \"username\": \"ana.gomez\",\n  \"email\": \"ana@uade.edu.ar\",\n  \"password\": \"password123\",\n  \"fechaNacimiento\": \"1998-02-11\",\n  \"sexo\": \"FEMENINO\"\n}"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "2. Login segundo usuario - guarda {{tokenOtro}}",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8081/api/usuarios/login",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "usuarios",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"ana@uade.edu.ar\",\n  \"password\": \"password123\"\n}"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Guarda el JWT del login en una variable de la colección,",
+                  "// así el resto de los requests lo usan solos via el auth de la coleccion.",
+                  "var data = pm.response.json();",
+                  "if (data.token) {",
+                  "    pm.collectionVariables.set(\"tokenOtro\", data.token);",
+                  "    console.log(\"tokenOtro guardado\");",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3. Registrar admin (201) - despues darle el rol ADMIN en la base",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8081/api/usuarios/registro",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "usuarios",
+                "registro"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Admin\",\n  \"apellido\": \"Campus\",\n  \"username\": \"admin.campus\",\n  \"email\": \"admin@uade.edu.ar\",\n  \"password\": \"password123\",\n  \"fechaNacimiento\": \"1990-01-01\",\n  \"sexo\": \"PREFIERO_NO_DECIR\"\n}"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "4. Login admin - guarda {{tokenAdmin}}",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8081/api/usuarios/login",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "usuarios",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@uade.edu.ar\",\n  \"password\": \"password123\"\n}"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Guarda el JWT del login en una variable de la colección,",
+                  "// así el resto de los requests lo usan solos via el auth de la coleccion.",
+                  "var data = pm.response.json();",
+                  "if (data.token) {",
+                  "    pm.collectionVariables.set(\"tokenAdmin\", data.token);",
+                  "    console.log(\"tokenAdmin guardado\");",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login de un usuario dado de baja (401)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8081/api/usuarios/login",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "usuarios",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"inactivo@uade.edu.ar\",\n  \"password\": \"password123\"\n}"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Crear producto SIN token (401)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8081/api/productos",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "productos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Sin token\",\n  \"precio\": 1000,\n  \"stock\": 1,\n  \"sku\": \"SIN-TOKEN\",\n  \"categoriaIds\": [1],\n  \"marcaId\": 1,\n  \"imagenes\": [{\"url\": \"https://cdn.ejemplo.com/x.jpg\"}]\n}"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Crear producto con token FALSIFICADO (401)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8081/api/productos",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "productos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Token falso\",\n  \"precio\": 1000,\n  \"stock\": 1,\n  \"sku\": \"TOKEN-FALSO\",\n  \"categoriaIds\": [1],\n  \"marcaId\": 1,\n  \"imagenes\": [{\"url\": \"https://cdn.ejemplo.com/x.jpg\"}]\n}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "no.es.un.token",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear categoría como USER común (403)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8081/api/categorias",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "categorias"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Perifericos\"\n}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear categoría como ADMIN (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8081/api/categorias",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "categorias"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Perifericos\"\n}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ver el carrito de OTRO usuario (403)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8081/api/carritos/usuarios/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "carritos",
+                "usuarios",
+                "1"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenOtro}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ver los pedidos de OTRO usuario (403)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8081/api/usuarios/1/pedidos",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "usuarios",
+                "1",
+                "pedidos"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenOtro}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar todos los usuarios como USER comun (403)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8081/api/usuarios",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "usuarios"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar todos los usuarios como ADMIN (200)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8081/api/usuarios",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "usuarios"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Pedidos",
+      "item": [
+        {
+          "name": "Obtener pedido por id (200)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8081/api/pedidos/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "pedidos",
+                "1"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Obtener pedido por numero (200)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8081/api/pedidos/numero/PED-1758300000000",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "pedidos",
+                "numero",
+                "PED-1758300000000"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Historial de pedidos del usuario (200/204)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8081/api/usuarios/1/pedidos",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "usuarios",
+                "1",
+                "pedidos"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Obtener pedido inexistente (404)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8081/api/pedidos/9999",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "pedidos",
+                "9999"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "tokenOtro",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "tokenAdmin",
+      "value": "",
+      "type": "string"
     }
   ]
 }
