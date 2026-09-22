@@ -8,8 +8,10 @@ import com.uade.ecommerce.identidad.dto.CreateUsuarioRequest;
 import com.uade.ecommerce.identidad.dto.LoginRequest;
 import com.uade.ecommerce.identidad.dto.LoginResponse;
 import com.uade.ecommerce.identidad.dto.UsuarioResponse;
+import com.uade.ecommerce.identidad.security.UsuarioAutenticado;
 import com.uade.ecommerce.identidad.service.UsuarioService;
 import com.uade.ecommerce.shared.exception.ArgumentInvalidException;
+import com.uade.ecommerce.shared.exception.ForbiddenException;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,15 +28,18 @@ public class UsuarioController {
     private final UsuarioService usuarioService;
     private final ProductoService productoService;
     private final PedidoService pedidoService;
+    private final UsuarioAutenticado usuarioAutenticado;
 
     public UsuarioController(
             UsuarioService usuarioService,
             ProductoService productoService,
-            PedidoService pedidoService
+            PedidoService pedidoService,
+            UsuarioAutenticado usuarioAutenticado
     ) {
         this.usuarioService = usuarioService;
         this.productoService = productoService;
         this.pedidoService = pedidoService;
+        this.usuarioAutenticado = usuarioAutenticado;
     }
 
     // Registro de usuario -> 201 Created + header Location
@@ -104,8 +109,13 @@ public class UsuarioController {
 
     // Historial de compras del usuario, del más nuevo al más viejo
     // -> 200 con la lista, 204 si todavía no compró nada, 404 si el usuario no existe
+    // Ítem 18: el historial es privado, solo lo ve su dueño (o un ADMIN) -> 403 si es de otro
     @GetMapping("/{id}/pedidos")
     public ResponseEntity<List<PedidoResponse>> getPedidosByUsuario(@PathVariable Long id) {
+        if (!usuarioAutenticado.esAdmin() && !usuarioAutenticado.idRequerido().equals(id)) {
+            throw new ForbiddenException("Solo podés consultar tu propio historial de pedidos");
+        }
+
         List<PedidoResponse> pedidos = pedidoService.getPedidosByUsuario(id);
 
         if (pedidos.isEmpty()) {

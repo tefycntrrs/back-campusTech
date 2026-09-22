@@ -83,10 +83,16 @@ public class ProductoService {
                 .toList();
     }
 
-    public ProductoResponse createProducto(CreateProductoRequest request) {
+    /**
+     * Publica un producto. El vendedor ya no llega en el body: lo pasa el controller a partir del
+     * usuario autenticado (ítem 17), así nadie puede publicar a nombre de otro.
+     *
+     * @param vendedorId id del usuario autenticado que publica
+     */
+    public ProductoResponse createProducto(CreateProductoRequest request, Long vendedorId) {
         Set<Categoria> categorias = resolveCategorias(request.categoriasSolicitadas());
         Marca marca = resolveMarca(request.getMarcaId());
-        Usuario vendedor = resolveVendedor(request.getVendedorId());
+        Usuario vendedor = resolveVendedor(vendedorId);
 
         if (request.getNombre() == null || request.getNombre().isBlank()) {
             throw new ArgumentInvalidException("nombre", "El nombre del producto es obligatorio");
@@ -128,6 +134,11 @@ public class ProductoService {
         return ProductoResponse.from(productoRepository.save(producto));
     }
 
+    /**
+     * Actualización parcial. El {@code usuarioId} es el del usuario autenticado, no un query param
+     * (ítem 17): antes cualquiera podía mandar ?usuarioId= con el id del dueño y editar un
+     * producto ajeno.
+     */
     public ProductoResponse updateProducto(Long id, Long usuarioId, CreateProductoRequest request) {
         Producto producto = buscarProducto(id);
         verificarPropietario(producto, usuarioId);
@@ -154,11 +165,6 @@ public class ProductoService {
         Marca marca = null;
         if (request.getMarcaId() != null) {
             marca = resolveMarca(request.getMarcaId());
-        }
-
-        Usuario vendedor = null;
-        if (request.getVendedorId() != null) {
-            vendedor = resolveVendedor(request.getVendedorId());
         }
 
         if (request.getNombre() != null) {
@@ -195,9 +201,7 @@ public class ProductoService {
             producto.setMarca(marca);
         }
 
-        if (vendedor != null) {
-            producto.setVendedor(vendedor);
-        }
+        // El vendedor no se toca: un producto no cambia de dueño desde la API
 
         // Igual que las categorías: si mandan imágenes, reemplazan la galería completa
         if (request.getImagenes() != null) {
@@ -210,6 +214,7 @@ public class ProductoService {
         return ProductoResponse.from(productoRepository.save(producto));
     }
 
+    /** Baja lógica. Igual que el update: el usuarioId es el del autenticado, no un query param. */
     public void eliminarProducto(Long id, Long usuarioId) {
         Producto producto = buscarProducto(id);
         verificarPropietario(producto, usuarioId);
@@ -324,6 +329,10 @@ public class ProductoService {
                 .orElseThrow(() -> new MarcaNotFoundException(marcaId));
     }
 
+    /**
+     * El vendedor sale del usuario autenticado, así que en condiciones normales siempre existe.
+     * Las dos verificaciones quedan como red de seguridad por si el service se llama desde otro lado.
+     */
     private Usuario resolveVendedor(Long vendedorId) {
         if (vendedorId == null) {
             throw new ArgumentInvalidException(
@@ -337,6 +346,10 @@ public class ProductoService {
                 .orElseThrow(() -> new UsuarioNotFoundException(vendedorId));
     }
 
+    /**
+     * Solo el vendedor puede modificar o dar de baja su publicación. El id ya no lo elige el
+     * cliente: viene del token, así que un 403 acá significa de verdad "este producto es de otro".
+     */
     private void verificarPropietario(Producto producto, Long usuarioId) {
         if (usuarioId == null) {
             throw new ArgumentInvalidException("usuarioId", "Falta indicar el usuario que realiza la operación");
