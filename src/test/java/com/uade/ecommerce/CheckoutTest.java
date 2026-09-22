@@ -16,13 +16,15 @@ import com.uade.ecommerce.catalogo.repository.MarcaRepository;
 import com.uade.ecommerce.compras.repository.PedidoRepository;
 import com.uade.ecommerce.catalogo.repository.ProductoRepository;
 import com.uade.ecommerce.identidad.repository.UsuarioRepository;
+import com.uade.ecommerce.identidad.security.JwtService;
+import com.uade.ecommerce.support.SeguridadDeTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 import java.math.BigDecimal;
@@ -68,6 +70,12 @@ class CheckoutTest {
     @Autowired
     private DetallePedidoRepository detallePedidoRepository;
 
+    @Autowired
+    private JwtService jwtService;
+
+    @Autowired
+    private UserDetailsService userDetailsService;
+
     private MockMvc mockMvc;
 
     private Usuario usuario;
@@ -76,7 +84,7 @@ class CheckoutTest {
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.webAppContextSetup(context).build();
+        mockMvc = SeguridadDeTest.mockMvcConSeguridad(context);
 
         limpiarBaseDeDatos();
 
@@ -151,6 +159,11 @@ class CheckoutTest {
         return productoRepository.save(producto);
     }
 
+    /** Token del usuario dueno del carrito: el checkout ahora exige estar autenticado. */
+    private String token() {
+        return SeguridadDeTest.bearer(jwtService, userDetailsService, usuario.getEmail());
+    }
+
     private Carrito crearCarritoConItems(int cantidadA, int cantidadB) {
 
         Carrito carrito = new Carrito();
@@ -180,7 +193,8 @@ class CheckoutTest {
         Carrito carrito = crearCarritoConItems(2, 3);
 
         // total esperado: 2*100 + 3*50 = 350
-        mockMvc.perform(post("/api/carritos/{id}/checkout", carrito.getId()))
+        mockMvc.perform(post("/api/carritos/{id}/checkout", carrito.getId())
+                        .header("Authorization", token()))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.numero").exists())
                 .andExpect(jsonPath("$.estado").value("CONFIRMADO"))
@@ -203,7 +217,8 @@ class CheckoutTest {
 
     @Test
     void rechazaElCheckoutDeUnCarritoInexistente() throws Exception {
-        mockMvc.perform(post("/api/carritos/{id}/checkout", 9999L))
+        mockMvc.perform(post("/api/carritos/{id}/checkout", 9999L)
+                        .header("Authorization", token()))
                 .andExpect(status().isNotFound());
     }
 
@@ -214,7 +229,8 @@ class CheckoutTest {
         carrito.setEstado(EstadoCarrito.ACTIVO);
         carrito = carritoRepository.save(carrito);
 
-        mockMvc.perform(post("/api/carritos/{id}/checkout", carrito.getId()))
+        mockMvc.perform(post("/api/carritos/{id}/checkout", carrito.getId())
+                        .header("Authorization", token()))
                 .andExpect(status().isBadRequest());
     }
 
@@ -222,11 +238,13 @@ class CheckoutTest {
     void rechazaElCheckoutDeUnCarritoYaFinalizado() throws Exception {
         Carrito carrito = crearCarritoConItems(1, 1);
 
-        mockMvc.perform(post("/api/carritos/{id}/checkout", carrito.getId()))
+        mockMvc.perform(post("/api/carritos/{id}/checkout", carrito.getId())
+                        .header("Authorization", token()))
                 .andExpect(status().isCreated());
 
         // segundo checkout sobre el mismo carrito, ya FINALIZADO
-        mockMvc.perform(post("/api/carritos/{id}/checkout", carrito.getId()))
+        mockMvc.perform(post("/api/carritos/{id}/checkout", carrito.getId())
+                        .header("Authorization", token()))
                 .andExpect(status().isBadRequest());
     }
 
@@ -238,7 +256,8 @@ class CheckoutTest {
         productoB.setStock(1);
         productoRepository.save(productoB);
 
-        mockMvc.perform(post("/api/carritos/{id}/checkout", carrito.getId()))
+        mockMvc.perform(post("/api/carritos/{id}/checkout", carrito.getId())
+                        .header("Authorization", token()))
                 .andExpect(status().isBadRequest());
 
         // productoA tenia stock de sobra, pero como productoB fallo, no se descuenta nada
@@ -262,7 +281,8 @@ class CheckoutTest {
         productoA.setActivo(false);
         productoRepository.save(productoA);
 
-        mockMvc.perform(post("/api/carritos/{id}/checkout", carrito.getId()))
+        mockMvc.perform(post("/api/carritos/{id}/checkout", carrito.getId())
+                        .header("Authorization", token()))
                 .andExpect(status().isBadRequest());
 
         Producto productoBActualizado = productoRepository.findById(productoB.getId()).orElseThrow();

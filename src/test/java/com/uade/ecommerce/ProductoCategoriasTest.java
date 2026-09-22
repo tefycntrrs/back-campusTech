@@ -9,14 +9,16 @@ import com.uade.ecommerce.catalogo.repository.CategoriaRepository;
 import com.uade.ecommerce.catalogo.repository.MarcaRepository;
 import com.uade.ecommerce.catalogo.repository.ProductoRepository;
 import com.uade.ecommerce.identidad.repository.UsuarioRepository;
+import com.uade.ecommerce.identidad.security.JwtService;
+import com.uade.ecommerce.support.SeguridadDeTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 import java.time.LocalDate;
@@ -47,6 +49,12 @@ class ProductoCategoriasTest {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
+    @Autowired
+    private JwtService jwtService;
+
+    @Autowired
+    private UserDetailsService userDetailsService;
+
     private MockMvc mockMvc;
 
     private Long notebooksId;
@@ -56,7 +64,7 @@ class ProductoCategoriasTest {
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.webAppContextSetup(context).build();
+        mockMvc = SeguridadDeTest.mockMvcConSeguridad(context);
         limpiar();
 
         notebooksId = categoriaRepository.save(categoria("Notebooks")).getId();
@@ -81,12 +89,12 @@ class ProductoCategoriasTest {
                   "sku": "ROG-G14-4070",
                   "categoriaIds": [%d, %d],
                   "marcaId": %d,
-                  "vendedorId": %d,
                   "imagenes": [{"url": "https://cdn.ejemplo.com/rog-g14.jpg"}]
                 }
-                """.formatted(notebooksId, gamingId, marcaId, vendedorId);
+                """.formatted(notebooksId, gamingId, marcaId);
 
         mockMvc.perform(post("/api/productos")
+                        .header("Authorization", token())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isCreated())
@@ -118,12 +126,12 @@ class ProductoCategoriasTest {
                   "sku": "TUF-A15",
                   "categoriaIds": [%d],
                   "marcaId": %d,
-                  "vendedorId": %d,
                   "imagenes": [{"url": "https://cdn.ejemplo.com/tuf-a15.jpg"}]
                 }
-                """.formatted(notebooksId, marcaId, vendedorId);
+                """.formatted(notebooksId, marcaId);
 
         mockMvc.perform(post("/api/productos")
+                        .header("Authorization", token())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isCreated());
@@ -137,7 +145,8 @@ class ProductoCategoriasTest {
                 .andExpect(jsonPath("$.vendedorUsername").value("vendedor.test"));
 
         // y desde el usuario se llega a sus publicaciones (Usuario 1:N Producto)
-        mockMvc.perform(get("/api/usuarios/" + vendedorId + "/productos"))
+        mockMvc.perform(get("/api/usuarios/" + vendedorId + "/productos")
+                        .header("Authorization", token()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].sku").value("TUF-A15"));
@@ -147,8 +156,10 @@ class ProductoCategoriasTest {
         assertThat(delVendedor.get(0).getVendedor().getId()).isEqualTo(vendedorId);
     }
 
+    // Antes el vendedor se mandaba en el body y faltaba -> 400.
+    // Ahora el vendedor sale del token, así que "sin vendedor" es directamente "sin token" -> 401.
     @Test
-    void rechazaUnProductoSinVendedor() throws Exception {
+    void rechazaPublicarSinTokenCon401() throws Exception {
         String body = """
                 {
                   "nombre": "Sin vendedor",
@@ -156,17 +167,60 @@ class ProductoCategoriasTest {
                   "stock": 1,
                   "sku": "SIN-VENDEDOR",
                   "categoriaIds": [%d],
-                  "marcaId": %d
+                  "marcaId": %d,
+                  "imagenes": [{"url": "https://cdn.ejemplo.com/sin-vendedor.jpg"}]
                 }
                 """.formatted(notebooksId, marcaId);
 
         mockMvc.perform(post("/api/productos")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.errores.vendedorId").exists());
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value(401));
 
         assertThat(productoRepository.count()).isZero();
+    }
+
+    /**
+     * Ítem 17: aunque el cliente insista mandando un vendedorId en el body, el producto queda a
+     * nombre del usuario del token. Antes ese campo se respetaba y cualquiera podía publicar a
+     * nombre de otro.
+     */
+    @Test
+    void elVendedorSaleDelTokenAunqueElBodyMandeOtroId() throws Exception {
+        Usuario intruso = new Usuario();
+        intruso.setNombre("Otro");
+        intruso.setApellido("Usuario");
+        intruso.setUsername("otro.test");
+        intruso.setEmail("otro@uade.edu.ar");
+        intruso.setPassword("$2a$10$hashDePrueba");
+        intruso.setFechaNacimiento(LocalDate.of(1990, 1, 1));
+        intruso.setSexo(Sexo.OTRO);
+        Long intrusoId = usuarioRepository.save(intruso).getId();
+
+        String body = """
+                {
+                  "nombre": "Publicado a nombre de otro",
+                  "precio": 1000,
+                  "stock": 1,
+                  "sku": "SUPLANTA-1",
+                  "categoriaIds": [%d],
+                  "marcaId": %d,
+                  "vendedorId": %d,
+                  "imagenes": [{"url": "https://cdn.ejemplo.com/suplanta.jpg"}]
+                }
+                """.formatted(notebooksId, marcaId, intrusoId);
+
+        mockMvc.perform(post("/api/productos")
+                        .header("Authorization", token())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.vendedorId").value(vendedorId));
+
+        Producto guardado = productoRepository.findAll().get(0);
+        assertThat(guardado.getVendedor().getId()).isEqualTo(vendedorId);
+        assertThat(productoRepository.findByVendedorId(intrusoId)).isEmpty();
     }
 
     @Test
@@ -179,12 +233,12 @@ class ProductoCategoriasTest {
                   "sku": "COMPAT-1",
                   "categoriaId": %d,
                   "marcaId": %d,
-                  "vendedorId": %d,
                   "imagenes": [{"url": "https://cdn.ejemplo.com/compat.jpg"}]
                 }
-                """.formatted(notebooksId, marcaId, vendedorId);
+                """.formatted(notebooksId, marcaId);
 
         mockMvc.perform(post("/api/productos")
+                        .header("Authorization", token())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isCreated())
@@ -197,6 +251,11 @@ class ProductoCategoriasTest {
         categoriaRepository.deleteAll();
         marcaRepository.deleteAll();
         usuarioRepository.deleteAll();
+    }
+
+    /** Token del vendedor: publicar exige estar autenticado y el vendedor sale de ahí. */
+    private String token() {
+        return SeguridadDeTest.bearer(jwtService, userDetailsService, "vendedor@uade.edu.ar");
     }
 
     private Categoria categoria(String nombre) {

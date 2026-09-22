@@ -10,14 +10,16 @@ import com.uade.ecommerce.catalogo.repository.CategoriaRepository;
 import com.uade.ecommerce.catalogo.repository.MarcaRepository;
 import com.uade.ecommerce.catalogo.repository.ProductoRepository;
 import com.uade.ecommerce.identidad.repository.UsuarioRepository;
+import com.uade.ecommerce.identidad.security.JwtService;
+import com.uade.ecommerce.support.SeguridadDeTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 import java.math.BigDecimal;
@@ -49,6 +51,12 @@ class ProductoCatalogoTest {
     @Autowired
     private MarcaRepository marcaRepository;
 
+    @Autowired
+    private JwtService jwtService;
+
+    @Autowired
+    private UserDetailsService userDetailsService;
+
     private MockMvc mockMvc;
 
     private Usuario duenio;
@@ -58,7 +66,7 @@ class ProductoCatalogoTest {
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.webAppContextSetup(context).build();
+        mockMvc = SeguridadDeTest.mockMvcConSeguridad(context);
 
         productoRepository.deleteAll();
         usuarioRepository.deleteAll();
@@ -119,7 +127,7 @@ class ProductoCatalogoTest {
         Producto producto = guardarProducto("Teclado", "TEC-1", true, duenio);
 
         mockMvc.perform(put("/api/productos/" + producto.getId())
-                        .param("usuarioId", String.valueOf(duenio.getId()))
+                        .header("Authorization", token(duenio))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"stock\": 42}"))
                 .andExpect(status().isOk())
@@ -133,7 +141,7 @@ class ProductoCatalogoTest {
         Producto producto = guardarProducto("Monitor", "MON-1", true, duenio);
 
         mockMvc.perform(put("/api/productos/" + producto.getId())
-                        .param("usuarioId", String.valueOf(otro.getId()))
+                        .header("Authorization", token(otro))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"stock\": 0}"))
                 .andExpect(status().isForbidden())
@@ -142,14 +150,33 @@ class ProductoCatalogoTest {
         assertThat(productoRepository.findById(producto.getId()).orElseThrow().getStock()).isEqualTo(10);
     }
 
+    // Antes el dueño se mandaba en ?usuarioId= y sin ese parámetro el PUT daba 400.
+    // Ahora la identidad sale del token: sin token no se pasa de la puerta -> 401 (ítem 17).
     @Test
-    void elPutSinUsuarioIdEsRechazado() throws Exception {
+    void elPutSinTokenEsRechazadoCon401() throws Exception {
         Producto producto = guardarProducto("Parlante", "PAR-1", true, duenio);
 
         mockMvc.perform(put("/api/productos/" + producto.getId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"stock\": 5}"))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value(401));
+
+        assertThat(productoRepository.findById(producto.getId()).orElseThrow().getStock()).isEqualTo(10);
+    }
+
+    // Un token que no firmó este servidor no autentica a nadie
+    @Test
+    void elPutConUnTokenFalsificadoEsRechazadoCon401() throws Exception {
+        Producto producto = guardarProducto("Parlante falsificado", "PAR-2", true, duenio);
+
+        mockMvc.perform(put("/api/productos/" + producto.getId())
+                        .header("Authorization", "Bearer no.es.un.token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"stock\": 5}"))
+                .andExpect(status().isUnauthorized());
+
+        assertThat(productoRepository.findById(producto.getId()).orElseThrow().getStock()).isEqualTo(10);
     }
 
     @Test
@@ -157,7 +184,7 @@ class ProductoCatalogoTest {
         Producto producto = guardarProducto("Camara", "CAM-1", true, duenio);
 
         mockMvc.perform(delete("/api/productos/" + producto.getId())
-                        .param("usuarioId", String.valueOf(duenio.getId())))
+                        .header("Authorization", token(duenio)))
                 .andExpect(status().isNoContent());
 
         assertThat(productoRepository.findById(producto.getId()).orElseThrow().getActivo()).isFalse();
@@ -171,10 +198,15 @@ class ProductoCatalogoTest {
         Producto producto = guardarProducto("Tablet", "TAB-1", true, duenio);
 
         mockMvc.perform(delete("/api/productos/" + producto.getId())
-                        .param("usuarioId", String.valueOf(otro.getId())))
+                        .header("Authorization", token(otro)))
                 .andExpect(status().isForbidden());
 
         assertThat(productoRepository.findById(producto.getId()).orElseThrow().getActivo()).isTrue();
+    }
+
+    /** Header Authorization del usuario indicado, con un JWT emitido de verdad. */
+    private String token(Usuario usuario) {
+        return SeguridadDeTest.bearer(jwtService, userDetailsService, usuario.getEmail());
     }
 
     private Producto guardarProducto(String nombre, String sku, boolean activo, Usuario vendedor) {

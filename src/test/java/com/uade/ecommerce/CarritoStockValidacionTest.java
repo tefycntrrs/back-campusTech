@@ -11,14 +11,16 @@ import com.uade.ecommerce.compras.repository.ItemCarritoRepository;
 import com.uade.ecommerce.catalogo.repository.MarcaRepository;
 import com.uade.ecommerce.catalogo.repository.ProductoRepository;
 import com.uade.ecommerce.identidad.repository.UsuarioRepository;
+import com.uade.ecommerce.identidad.security.JwtService;
+import com.uade.ecommerce.support.SeguridadDeTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 import java.math.BigDecimal;
@@ -57,6 +59,12 @@ class CarritoStockValidacionTest {
     @Autowired
     private ItemCarritoRepository itemCarritoRepository;
 
+    @Autowired
+    private JwtService jwtService;
+
+    @Autowired
+    private UserDetailsService userDetailsService;
+
     private MockMvc mockMvc;
 
     private Usuario usuario;
@@ -67,7 +75,7 @@ class CarritoStockValidacionTest {
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.webAppContextSetup(context).build();
+        mockMvc = SeguridadDeTest.mockMvcConSeguridad(context);
 
         limpiarBaseDeDatos();
 
@@ -147,6 +155,11 @@ class CarritoStockValidacionTest {
         return productoRepository.save(producto).getId();
     }
 
+    /** El carrito ahora exige estar autenticado y ser su dueno (item 18). */
+    private String token() {
+        return SeguridadDeTest.bearer(jwtService, userDetailsService, usuario.getEmail());
+    }
+
     private String bodyAgregarItem(Long productoId, int cantidad) {
         return """
                 {
@@ -159,6 +172,7 @@ class CarritoStockValidacionTest {
     @Test
     void agregaElItemCuandoElProductoEstaActivoYHayStockSuficiente() throws Exception {
         mockMvc.perform(post("/api/carritos/usuarios/{usuarioId}/items", usuarioId)
+                        .header("Authorization", token())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(bodyAgregarItem(productoConStockId, 2)))
                 .andExpect(status().isOk())
@@ -169,6 +183,7 @@ class CarritoStockValidacionTest {
     @Test
     void rechazaElProductoInactivo() throws Exception {
         mockMvc.perform(post("/api/carritos/usuarios/{usuarioId}/items", usuarioId)
+                        .header("Authorization", token())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(bodyAgregarItem(productoInactivoId, 1)))
                 .andExpect(status().isBadRequest())
@@ -180,6 +195,7 @@ class CarritoStockValidacionTest {
     @Test
     void rechazaElProductoSinStock() throws Exception {
         mockMvc.perform(post("/api/carritos/usuarios/{usuarioId}/items", usuarioId)
+                        .header("Authorization", token())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(bodyAgregarItem(productoSinStockId, 1)))
                 .andExpect(status().isBadRequest())
@@ -191,6 +207,7 @@ class CarritoStockValidacionTest {
     @Test
     void rechazaUnaCantidadNegativa() throws Exception {
         mockMvc.perform(post("/api/carritos/usuarios/{usuarioId}/items", usuarioId)
+                        .header("Authorization", token())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(bodyAgregarItem(productoConStockId, -3)))
                 .andExpect(status().isBadRequest())
@@ -202,6 +219,7 @@ class CarritoStockValidacionTest {
     @Test
     void rechazaUnaCantidadQueSuperaElStockDisponible() throws Exception {
         mockMvc.perform(post("/api/carritos/usuarios/{usuarioId}/items", usuarioId)
+                        .header("Authorization", token())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(bodyAgregarItem(productoConStockId, 999)))
                 .andExpect(status().isBadRequest())
@@ -214,12 +232,14 @@ class CarritoStockValidacionTest {
     @Test
     void rechazaLaSumaAcumuladaQueSuperaElStockAlAgregarElMismoProductoDosVeces() throws Exception {
         mockMvc.perform(post("/api/carritos/usuarios/{usuarioId}/items", usuarioId)
+                        .header("Authorization", token())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(bodyAgregarItem(productoConStockId, 3)))
                 .andExpect(status().isOk());
 
         // ya hay 3 en el carrito, quedan 2 de stock: pedir 3 mas debe rechazarse
         mockMvc.perform(post("/api/carritos/usuarios/{usuarioId}/items", usuarioId)
+                        .header("Authorization", token())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(bodyAgregarItem(productoConStockId, 3)))
                 .andExpect(status().isBadRequest())
