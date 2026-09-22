@@ -4,6 +4,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -16,6 +18,18 @@ import java.util.Map;
 /**
  * Manejo global de excepciones: ningún controller arma respuestas de error,
  * todas pasan por acá y salen con el mismo formato (ErrorResponse).
+ *
+ * <p>También entran acá los errores de Spring Security (ítem 19). Esos no los tira un controller
+ * sino la cadena de filtros, que corre antes del DispatcherServlet, así que por sí solos nunca
+ * llegarían a un @RestControllerAdvice: se devolverían con el HTML/vacío por defecto de Spring
+ * Security y el cliente recibiría dos formatos de error distintos según dónde falló. Por eso
+ * {@code SecurityConfig} redirige su authenticationEntryPoint y su accessDeniedHandler al
+ * HandlerExceptionResolver, que los trae hasta los dos handlers de abajo.</p>
+ *
+ * <p>Ítems 30 y 31: no hizo falta inventar excepciones nuevas. "No autenticado" y "token
+ * inválido" ya los cubren las AuthenticationException de Spring Security; "sin permiso" sigue
+ * siendo ForbiddenException (403); y para roles se reutilizan ResourceNotFoundException y
+ * DuplicateResourceException, que no son específicas de ninguna entidad.</p>
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -68,6 +82,42 @@ public class GlobalExceptionHandler {
             HttpServletRequest request
     ) {
         return build(HttpStatus.FORBIDDEN, exception.getMessage(), request);
+    }
+
+    /**
+     * 401 - No hay credenciales, o el token es inválido o venció.
+     *
+     * <p>El mensaje es genérico a propósito: decir "el token venció" o "ese usuario no existe"
+     * le da información gratis a quien está probando.</p>
+     */
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ErrorResponse> handleNoAutenticado(
+            AuthenticationException exception,
+            HttpServletRequest request
+    ) {
+        return build(
+                HttpStatus.UNAUTHORIZED,
+                "Necesitás iniciar sesión para acceder a este recurso",
+                request
+        );
+    }
+
+    /**
+     * 403 - El usuario está autenticado pero su rol no alcanza para esta operación.
+     *
+     * <p>Es el hermano de ForbiddenException: aquella la lanza el código cuando el recurso es de
+     * otro usuario, y esta la lanza Spring Security cuando la ruta pide un rol que no se tiene.</p>
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccesoDenegado(
+            AccessDeniedException exception,
+            HttpServletRequest request
+    ) {
+        return build(
+                HttpStatus.FORBIDDEN,
+                "No tenés permiso para realizar esta operación",
+                request
+        );
     }
 
     // 409 - Valores únicos repetidos (email, sku, nombre)
