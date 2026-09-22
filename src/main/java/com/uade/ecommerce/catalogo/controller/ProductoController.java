@@ -3,6 +3,7 @@ package com.uade.ecommerce.catalogo.controller;
 import com.uade.ecommerce.catalogo.dto.CreateProductoRequest;
 import com.uade.ecommerce.catalogo.dto.ProductoResponse;
 import com.uade.ecommerce.catalogo.service.ProductoService;
+import com.uade.ecommerce.identidad.security.UsuarioAutenticado;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,15 +13,27 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.net.URI;
 import java.util.List;
 
+/**
+ * Endpoints del catálogo.
+ *
+ * <p>Los GET son públicos (se puede mirar el catálogo sin cuenta); publicar, modificar y dar de
+ * baja piden estar autenticado, y quién es el usuario sale del token, nunca del request. Antes
+ * PUT y DELETE recibían {@code ?usuarioId=...}: eso no era seguridad, porque cualquiera podía
+ * escribir el id del dueño y editarle el producto (ítem 17).</p>
+ */
 @RestController
 @RequestMapping("/api/productos")
 public class ProductoController {
 
     private final ProductoService productoService;
+    private final UsuarioAutenticado usuarioAutenticado;
 
-    //Constructor de la clase ProductoController
-    public ProductoController(ProductoService productoService) {
+    public ProductoController(
+            ProductoService productoService,
+            UsuarioAutenticado usuarioAutenticado
+    ) {
         this.productoService = productoService;
+        this.usuarioAutenticado = usuarioAutenticado;
     }
 
     //Obtener el catálogo -> 200 con los activos ordenados por nombre, 204 si no hay ninguno
@@ -42,13 +55,16 @@ public class ProductoController {
         return ResponseEntity.ok(productoService.getProductoPublico(id));
     }
 
-    //Crear un nuevo producto -> 201 Created + header Location
+    //Crear un nuevo producto -> 201 Created + header Location. El vendedor es quien está logueado
     @PostMapping
     public ResponseEntity<ProductoResponse> createProducto(
             @Valid @RequestBody CreateProductoRequest request,
             UriComponentsBuilder uriBuilder
     ) {
-        ProductoResponse producto = productoService.createProducto(request);
+        ProductoResponse producto = productoService.createProducto(
+                request,
+                usuarioAutenticado.idRequerido()
+        );
 
         URI location = uriBuilder
                 .path("/api/productos/{id}")
@@ -62,19 +78,20 @@ public class ProductoController {
     @PutMapping("/{id}")
     public ResponseEntity<ProductoResponse> updateProducto(
             @PathVariable Long id,
-            @RequestParam(required = false) Long usuarioId,
             @Valid @RequestBody CreateProductoRequest request
     ) {
-        return ResponseEntity.ok(productoService.updateProducto(id, usuarioId, request));
+        return ResponseEntity.ok(productoService.updateProducto(
+                id,
+                usuarioAutenticado.idRequerido(),
+                request
+        ));
     }
 
     //Dar de baja un producto (soft delete) -> 204 (403 si no es el dueño)
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminarProducto(
-            @PathVariable Long id,
-            @RequestParam(required = false) Long usuarioId
-    ) {
-        productoService.eliminarProducto(id, usuarioId);
+    public ResponseEntity<Void> eliminarProducto(@PathVariable Long id) {
+        productoService.eliminarProducto(id, usuarioAutenticado.idRequerido());
+
         return ResponseEntity.noContent().build();
     }
 }

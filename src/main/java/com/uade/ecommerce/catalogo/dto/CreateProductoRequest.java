@@ -10,16 +10,19 @@ import java.util.List;
 /**
  * DTO de entrada del producto: lo usan POST /api/productos y PUT /api/productos/{id}.
  *
- * <p>En vez de la entidad Producto recibe los ids de las relaciones (categoriaIds, marcaId,
- * vendedorId); el service los busca en la base y arma el Producto con las Categorias, la Marca
- * y el Usuario vendedor de verdad.</p>
+ * <p>En vez de la entidad Producto recibe los ids de las relaciones (categoriaIds, marcaId);
+ * el service los busca en la base y arma el Producto con las Categorias y la Marca de verdad.</p>
+ *
+ * <p>El vendedor NO se manda en el body: sale del usuario autenticado. Antes existía un campo
+ * vendedorId y cualquiera podía publicar un producto a nombre de otro simplemente escribiendo
+ * otro id (ítem 17).</p>
  *
  * <p>Las anotaciones de validación de este DTO toleran null a propósito: @Size, @Positive,
  * @PositiveOrZero, @Digits y @Pattern consideran válido un campo ausente. Es necesario porque el
  * mismo DTO sirve para crear y para actualizar, y el PUT es parcial (podés mandar solo precio y
  * stock, y el resto queda como estaba): un @NotNull o un @NotBlank acá rompería la actualización.
  * Entonces el DTO valida el FORMATO de lo que llega, y lo que es obligatorio al crear (nombre,
- * sku, precio, stock, categorías, marca, vendedor, al menos una imagen) lo sigue exigiendo
+ * sku, precio, stock, categorías, marca, al menos una imagen) lo sigue exigiendo
  * ProductoService, que sí distingue "crear" de "actualizar".</p>
  *
  * <p>Las anotaciones las dispara el @Valid del controller: si alguna falla, Spring corta antes
@@ -67,9 +70,6 @@ public class CreateProductoRequest {
 
     // Ids de las relaciones. Obligatorios al crear; opcionales al actualizar
     private Long marcaId;
-
-    /** Usuario que publica el producto. Obligatorio al crear: queda guardado como vendedor. */
-    private Long vendedorId;
 
     /**
      * Galería del producto (opcional en el PUT, obligatoria al crear). El @Valid hace que la

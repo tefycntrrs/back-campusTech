@@ -13,7 +13,13 @@ import com.uade.ecommerce.identidad.model.Rol;
 import com.uade.ecommerce.identidad.model.Usuario;
 import com.uade.ecommerce.identidad.repository.RolRepository;
 import com.uade.ecommerce.identidad.repository.UsuarioRepository;
+import com.uade.ecommerce.identidad.security.JwtService;
 import jakarta.transaction.Transactional;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -33,15 +39,21 @@ public class UsuarioService {
     private final UsuarioRepository usuarioRepository;
     private final RolRepository rolRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AuthenticationManager authenticationManager;
+    private final JwtService jwtService;
 
     public UsuarioService(
             UsuarioRepository usuarioRepository,
             RolRepository rolRepository,
-            PasswordEncoder passwordEncoder
+            PasswordEncoder passwordEncoder,
+            AuthenticationManager authenticationManager,
+            JwtService jwtService
     ) {
         this.usuarioRepository = usuarioRepository;
         this.rolRepository = rolRepository;
         this.passwordEncoder = passwordEncoder;
+        this.authenticationManager = authenticationManager;
+        this.jwtService = jwtService;
     }
 
     public List<UsuarioResponse> getAllUsuarios() {
@@ -116,26 +128,37 @@ public class UsuarioService {
     }
 
     /**
-     * Login por email y contraseña. La comparación de la contraseña se hace acá adentro con la
-     * entidad: el hash nunca sale del service, hacia afuera solo viaja el LoginResponse.
-     * Los tres motivos de fallo (email inexistente, contraseña incorrecta, usuario inactivo)
-     * devuelven la misma excepción, para no revelar cuál fue.
+     * Login por email y contraseña. Ya no se compara el hash a mano: la autenticación la hace el
+     * AuthenticationManager de Spring Security (ítem 14), que busca al usuario con el
+     * UserDetailsService, compara la contraseña con el PasswordEncoder y verifica que la cuenta
+     * esté habilitada.
+     *
+     * <p>Todas las AuthenticationException se traducen a la misma CredencialesInvalidasException
+     * (401): email inexistente, contraseña incorrecta y usuario inactivo devuelven exactamente la
+     * misma respuesta, para no revelarle a quien prueba contraseñas cuál de las tres falló.</p>
+     *
+     * <p>Si la autenticación pasa, se emite el JWT que el cliente va a mandar de ahí en más.</p>
      */
     public LoginResponse login(LoginRequest request) {
         String email = request.getEmail().trim().toLowerCase();
 
+        Authentication autenticacion;
+
+        try {
+            autenticacion = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(email, request.getPassword())
+            );
+        } catch (AuthenticationException excepcion) {
+            throw new CredencialesInvalidasException();
+        }
+
+        String token = jwtService.generarToken((UserDetails) autenticacion.getPrincipal());
+
+        // Se relee la entidad para poder devolver el perfil completo (roles, edad, etc.)
         Usuario usuario = usuarioRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(CredencialesInvalidasException::new);
 
-        if (!passwordEncoder.matches(request.getPassword(), usuario.getPassword())) {
-            throw new CredencialesInvalidasException();
-        }
-
-        if (Boolean.FALSE.equals(usuario.getActivo())) {
-            throw new CredencialesInvalidasException();
-        }
-
-        return LoginResponse.from(usuario);
+        return LoginResponse.from(token, jwtService.getDuracionMs(), usuario);
     }
 
     private void validarFechaNacimiento(LocalDate fechaNacimiento) {
