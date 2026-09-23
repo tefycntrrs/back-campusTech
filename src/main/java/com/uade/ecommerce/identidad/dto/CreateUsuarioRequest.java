@@ -1,6 +1,7 @@
 package com.uade.ecommerce.identidad.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.uade.ecommerce.identidad.model.NombreRol;
 import com.uade.ecommerce.identidad.model.Sexo;
 import jakarta.validation.constraints.*;
 import lombok.Data;
@@ -57,4 +58,7 @@ public class CreateUsuarioRequest {
     // Tipado como enum y no como String: un valor inventado se rechaza al parsear el JSON
     @NotNull(message = "El sexo es obligatorio (MASCULINO, FEMENINO, OTRO, PREFIERO_NO_DECIR)")
     private Sexo sexo;
+
+    // Opcional. Si no viene, el usuario queda como USER. En el registro solo se aceptan USER o VENDEDOR: ADMIN lo asigna un admin después.
+    private NombreRol rol;
 }

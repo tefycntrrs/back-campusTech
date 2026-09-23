@@ -201,6 +201,35 @@ public class PedidoService {
                 .toList();
     }
 
+    /**
+     * Cancela un pedido CONFIRMADO y devuelve el stock de cada ítem.
+     * Solo el dueño o un ADMIN. Si ya está cancelado, 400.
+     */
+    public PedidoResponse cancelar(Long id, Long usuarioId, boolean esAdmin) {
+        Pedido pedido = pedidoRepository.findById(id)
+                .orElseThrow(() -> new PedidoNotFoundException(id));
+
+        verificarPropietario(pedido, usuarioId, esAdmin);
+
+        if (pedido.getEstado() == EstadoPedido.CANCELADO) {
+            throw new ArgumentInvalidException("pedidoId", "El pedido ya está cancelado");
+        }
+
+        for (DetallePedido detalle : pedido.getDetalles()) {
+            Producto producto = productoRepository.findById(detalle.getProducto().getId())
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Producto",
+                            detalle.getProducto().getId()
+                    ));
+
+            producto.setStock(producto.getStock() + detalle.getCantidad());
+            productoRepository.save(producto);
+        }
+
+        pedido.setEstado(EstadoPedido.CANCELADO);
+        return PedidoResponse.from(pedidoRepository.save(pedido));
+    }
+
     private String generarNumeroPedido() {
         return "PED-" + System.currentTimeMillis();
     }

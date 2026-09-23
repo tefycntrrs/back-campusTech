@@ -6,6 +6,7 @@ import com.uade.ecommerce.identidad.security.UsuarioAutenticado;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -45,6 +46,16 @@ public class PedidoController {
     public ResponseEntity<PedidoResponse> getPedidoByNumero(@PathVariable String numero) {
         return ResponseEntity.ok(pedidoService.getPedidoByNumero(
                 numero,
+                usuarioAutenticado.idRequerido(),
+                usuarioAutenticado.esAdmin()
+        ));
+    }
+
+    // Cancela el pedido, devuelve stock. Dueño o ADMIN -> 200; si es de otro -> 403
+    @PostMapping("/{id}/cancelar")
+    public ResponseEntity<PedidoResponse> cancelar(@PathVariable Long id) {
+        return ResponseEntity.ok(pedidoService.cancelar(
+                id,
                 usuarioAutenticado.idRequerido(),
                 usuarioAutenticado.esAdmin()
         ));

@@ -4,6 +4,7 @@ import com.uade.ecommerce.catalogo.dto.ProductoResponse;
 import com.uade.ecommerce.catalogo.service.ProductoService;
 import com.uade.ecommerce.compras.dto.PedidoResponse;
 import com.uade.ecommerce.compras.service.PedidoService;
+import com.uade.ecommerce.identidad.dto.AsignarRolesRequest;
 import com.uade.ecommerce.identidad.dto.CreateUsuarioRequest;
 import com.uade.ecommerce.identidad.dto.LoginRequest;
 import com.uade.ecommerce.identidad.dto.LoginResponse;
@@ -73,7 +74,23 @@ public class UsuarioController {
         return ResponseEntity.ok(usuarios);
     }
 
-    @GetMapping("/{id}")
+    // /me va antes de /{id} para que "me" no se intente parsear como Long
+    @GetMapping("/me")
+    public ResponseEntity<UsuarioResponse> getUsuarioActual() {
+        return ResponseEntity.ok(usuarioService.getUsuarioById(usuarioAutenticado.idRequerido()));
+    }
+
+    @GetMapping("/me/productos")
+    public ResponseEntity<List<ProductoResponse>> getProductosPropios() {
+        return responderListaProductos(usuarioAutenticado.idRequerido());
+    }
+
+    @GetMapping("/me/pedidos")
+    public ResponseEntity<List<PedidoResponse>> getPedidosPropios() {
+        return responderListaPedidos(usuarioAutenticado.idRequerido());
+    }
+
+    @GetMapping("/{id:\\d+}")
     public ResponseEntity<UsuarioResponse> getUsuarioById(@PathVariable Long id) {
         return ResponseEntity.ok(usuarioService.getUsuarioById(id));
     }
@@ -96,33 +113,30 @@ public class UsuarioController {
     }
 
     // Publicaciones creadas por el usuario -> el otro lado de Usuario 1:N Producto
-    @GetMapping("/{id}/productos")
+    @GetMapping("/{id:\\d+}/productos")
     public ResponseEntity<List<ProductoResponse>> getProductosByVendedor(@PathVariable Long id) {
-        List<ProductoResponse> productos = productoService.getProductosByVendedor(id);
-
-        if (productos.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
-        }
-
-        return ResponseEntity.ok(productos);
+        return responderListaProductos(id);
     }
 
     // Historial de compras del usuario, del más nuevo al más viejo
     // -> 200 con la lista, 204 si todavía no compró nada, 404 si el usuario no existe
     // Ítem 18: el historial es privado, solo lo ve su dueño (o un ADMIN) -> 403 si es de otro
-    @GetMapping("/{id}/pedidos")
+    @GetMapping("/{id:\\d+}/pedidos")
     public ResponseEntity<List<PedidoResponse>> getPedidosByUsuario(@PathVariable Long id) {
         if (!usuarioAutenticado.esAdmin() && !usuarioAutenticado.idRequerido().equals(id)) {
             throw new ForbiddenException("Solo podés consultar tu propio historial de pedidos");
         }
 
-        List<PedidoResponse> pedidos = pedidoService.getPedidosByUsuario(id);
+        return responderListaPedidos(id);
+    }
 
-        if (pedidos.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
-        }
-
-        return ResponseEntity.ok(pedidos);
+    // Solo ADMIN (SecurityConfig). Reemplaza todos los roles del usuario.
+    @PutMapping("/{id:\\d+}/roles")
+    public ResponseEntity<UsuarioResponse> asignarRoles(
+            @PathVariable Long id,
+            @Valid @RequestBody AsignarRolesRequest request
+    ) {
+        return ResponseEntity.ok(usuarioService.asignarRoles(id, request.getRoles()));
     }
 
     /**
@@ -132,5 +146,25 @@ public class UsuarioController {
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(usuarioService.login(request));
+    }
+
+    private ResponseEntity<List<ProductoResponse>> responderListaProductos(Long usuarioId) {
+        List<ProductoResponse> productos = productoService.getProductosByVendedor(usuarioId);
+
+        if (productos.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+        }
+
+        return ResponseEntity.ok(productos);
+    }
+
+    private ResponseEntity<List<PedidoResponse>> responderListaPedidos(Long usuarioId) {
+        List<PedidoResponse> pedidos = pedidoService.getPedidosByUsuario(usuarioId);
+
+        if (pedidos.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+        }
+
+        return ResponseEntity.ok(pedidos);
     }
 }

@@ -86,6 +86,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/categorias/**").hasRole(ROL_ADMIN)
                         .requestMatchers("/api/marcas/**").hasRole(ROL_ADMIN)
                         .requestMatchers(HttpMethod.GET, "/api/usuarios").hasRole(ROL_ADMIN)
+                        .requestMatchers(HttpMethod.PUT, "/api/usuarios/*/roles").hasRole(ROL_ADMIN)
 
                         // --- Todo lo demás pide estar logueado ---
                         // Publicar un producto, el carrito, el checkout y los pedidos entran acá.

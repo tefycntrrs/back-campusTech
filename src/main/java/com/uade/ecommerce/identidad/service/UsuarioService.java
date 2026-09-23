@@ -110,8 +110,7 @@ public class UsuarioService {
 
         validarFechaNacimiento(request.getFechaNacimiento());
 
-        Rol rolPorDefecto = rolRepository.findByNombre(NombreRol.USER)
-                .orElseGet(() -> rolRepository.save(new Rol(NombreRol.USER)));
+        Rol rolInicial = resolverRolDeRegistro(request.getRol());
 
         Usuario usuario = Usuario.builder()
                 .nombre(request.getNombre().trim())
@@ -121,7 +120,7 @@ public class UsuarioService {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .fechaNacimiento(request.getFechaNacimiento())
                 .sexo(request.getSexo())
-                .roles(new LinkedHashSet<>(Set.of(rolPorDefecto)))
+                .roles(new LinkedHashSet<>(Set.of(rolInicial)))
                 .build();
 
         return UsuarioResponse.from(usuarioRepository.save(usuario));
@@ -159,6 +158,51 @@ public class UsuarioService {
                 .orElseThrow(CredencialesInvalidasException::new);
 
         return LoginResponse.from(token, jwtService.getDuracionMs(), usuario);
+    }
+
+    /**
+     * Reemplaza los roles del usuario. Lo usa PUT /api/usuarios/{id}/roles (solo ADMIN).
+     * El filtro JWT relee los roles de la base en cada request, así el cambio vale al toque.
+     */
+    public UsuarioResponse asignarRoles(Long id, Set<NombreRol> rolesPedidos) {
+        if (rolesPedidos == null || rolesPedidos.isEmpty()) {
+            throw new ArgumentInvalidException("roles", "Hay que indicar al menos un rol");
+        }
+
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new UsuarioNotFoundException(id));
+
+        Set<Rol> roles = new LinkedHashSet<>();
+        for (NombreRol nombre : rolesPedidos) {
+            if (nombre == null) {
+                throw new ArgumentInvalidException("roles", "Hay un rol vacío");
+            }
+            roles.add(obtenerOCrearRol(nombre));
+        }
+
+        usuario.setRoles(roles);
+        return UsuarioResponse.from(usuarioRepository.save(usuario));
+    }
+
+    /**
+     * En el registro se puede pedir USER o VENDEDOR. ADMIN no: se autoasignaría privilegios.
+     */
+    private Rol resolverRolDeRegistro(NombreRol pedido) {
+        NombreRol nombre = pedido == null ? NombreRol.USER : pedido;
+
+        if (nombre == NombreRol.ADMIN) {
+            throw new ArgumentInvalidException(
+                    "rol",
+                    "No se puede registrar un ADMIN. Un administrador tiene que asignarte el rol"
+            );
+        }
+
+        return obtenerOCrearRol(nombre);
+    }
+
+    private Rol obtenerOCrearRol(NombreRol nombre) {
+        return rolRepository.findByNombre(nombre)
+                .orElseGet(() -> rolRepository.save(new Rol(nombre)));
     }
 
     private void validarFechaNacimiento(LocalDate fechaNacimiento) {

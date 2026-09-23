@@ -8,6 +8,7 @@ import com.uade.ecommerce.catalogo.model.Marca;
 import com.uade.ecommerce.catalogo.model.Producto;
 import com.uade.ecommerce.identidad.model.Sexo;
 import com.uade.ecommerce.identidad.model.Usuario;
+import com.uade.ecommerce.identidad.repository.RolRepository;
 import com.uade.ecommerce.compras.repository.CarritoRepository;
 import com.uade.ecommerce.catalogo.repository.CategoriaRepository;
 import com.uade.ecommerce.compras.repository.DetallePedidoRepository;
@@ -48,6 +49,9 @@ class CheckoutTest {
 
     @Autowired
     private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private RolRepository rolRepository;
 
     @Autowired
     private CategoriaRepository categoriaRepository;
@@ -134,6 +138,7 @@ class CheckoutTest {
         categoriaRepository.deleteAll();
         marcaRepository.deleteAll();
         usuarioRepository.deleteAll();
+        rolRepository.deleteAll();
     }
 
     private Producto crearProducto(
@@ -292,5 +297,80 @@ class CheckoutTest {
         assertThat(carritoActualizado.getEstado()).isEqualTo(EstadoCarrito.ACTIVO);
 
         assertThat(pedidoRepository.count()).isZero();
+    }
+
+    @Test
+    void cancelarElPedidoDevuelveElStock() throws Exception {
+        Carrito carrito = crearCarritoConItems(2, 3);
+
+        String respuesta = mockMvc.perform(post("/api/carritos/{id}/checkout", carrito.getId())
+                        .header("Authorization", token()))
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        Long pedidoId = Long.valueOf(respuesta.split("\"id\":")[1].split(",")[0].trim());
+
+        mockMvc.perform(post("/api/pedidos/{id}/cancelar", pedidoId)
+                        .header("Authorization", token()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.estado").value("CANCELADO"));
+
+        assertThat(productoRepository.findById(productoA.getId()).orElseThrow().getStock()).isEqualTo(10);
+        assertThat(productoRepository.findById(productoB.getId()).orElseThrow().getStock()).isEqualTo(10);
+    }
+
+    @Test
+    void cancelarUnPedidoYaCanceladoDevuelve400() throws Exception {
+        Carrito carrito = crearCarritoConItems(1, 1);
+
+        String respuesta = mockMvc.perform(post("/api/carritos/{id}/checkout", carrito.getId())
+                        .header("Authorization", token()))
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        Long pedidoId = Long.valueOf(respuesta.split("\"id\":")[1].split(",")[0].trim());
+
+        mockMvc.perform(post("/api/pedidos/{id}/cancelar", pedidoId)
+                        .header("Authorization", token()))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/pedidos/{id}/cancelar", pedidoId)
+                        .header("Authorization", token()))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void otroUsuarioNoPuedeCancelarElPedido() throws Exception {
+        Carrito carrito = crearCarritoConItems(1, 1);
+
+        String respuesta = mockMvc.perform(post("/api/carritos/{id}/checkout", carrito.getId())
+                        .header("Authorization", token()))
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        Long pedidoId = Long.valueOf(respuesta.split("\"id\":")[1].split(",")[0].trim());
+
+        Usuario ajeno = new Usuario();
+        ajeno.setNombre("Ajeno");
+        ajeno.setApellido("QA");
+        ajeno.setUsername("qa_ajeno");
+        ajeno.setEmail("qa.ajeno@test.com");
+        ajeno.setPassword("password123");
+        ajeno.setFechaNacimiento(LocalDate.of(1995, 1, 1));
+        ajeno.setSexo(Sexo.OTRO);
+        ajeno = usuarioRepository.save(ajeno);
+
+        mockMvc.perform(post("/api/pedidos/{id}/cancelar", pedidoId)
+                        .header("Authorization", SeguridadDeTest.bearer(
+                                jwtService, userDetailsService, ajeno.getEmail())))
+                .andExpect(status().isForbidden());
+
+        assertThat(productoRepository.findById(productoA.getId()).orElseThrow().getStock()).isEqualTo(9);
     }
 }

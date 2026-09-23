@@ -43,7 +43,8 @@ Por eso CSRF está desactivado.
 | `ADMIN` | Además, administra el ABM de categorías y marcas y puede consultar cualquier pedido. |
 | `VENDEDOR` | Está definido en el enum `NombreRol` y reservado para más adelante; hoy no se asigna. |
 
-> No hay endpoint para darse rol `ADMIN`: se asigna en la base (tabla `usuario_roles`).
+> El registro acepta `rol` opcional (`USER` o `VENDEDOR`; default `USER`). **ADMIN no se autoasigna**:
+> un `ADMIN` lo pone con `PUT /api/usuarios/{id}/roles`.
 
 ### Matriz de acceso
 
@@ -55,6 +56,8 @@ Por eso CSRF está desactivado.
 | `/api/categorias/**`, `/api/marcas/**` | GET | Público |
 | `/api/categorias/**`, `/api/marcas/**` | POST / PUT / DELETE | `ADMIN` |
 | `/api/usuarios` (listado completo) | GET | `ADMIN` |
+| `/api/usuarios/{id}/roles` | PUT | `ADMIN` |
+| `/api/usuarios/me`, `/me/productos`, `/me/pedidos` | GET | Autenticado (el del token) |
 | Todo el resto (publicar producto, carrito, checkout, pedidos) | — | Autenticado |
 
 Dentro de lo autenticado hay una segunda regla: **ser el dueño del recurso**. Editar el producto
@@ -368,9 +371,12 @@ Valores de `sexo`: `MASCULINO`, `FEMENINO`, `OTRO`, `PREFIERO_NO_DECIR`.
   "email": "pedro@uade.edu.ar",
   "password": "password123",
   "fechaNacimiento": "1999-05-20",
-  "sexo": "MASCULINO"
+  "sexo": "MASCULINO",
+  "rol": "VENDEDOR"
 }
 ```
+
+`rol` es **opcional**. Si no se manda, queda `USER`. Valores: `USER`, `VENDEDOR`. `ADMIN` → **400**.
 
 **Respuesta**
 
@@ -386,17 +392,18 @@ Valores de `sexo`: `MASCULINO`, `FEMENINO`, `OTRO`, `PREFIERO_NO_DECIR`.
   "sexo": "MASCULINO",
   "activo": true,
   "createdAt": "2026-09-03T21:00:30.882",
-  "roles": ["USER"]
+  "roles": ["VENDEDOR"]
 }
 ```
 
-Todo usuario nuevo queda con rol **`USER`**. La contraseña se guarda hasheada con BCrypt
+Si no se manda `rol`, el usuario nuevo queda con **`USER`**. La contraseña se guarda hasheada con BCrypt
 (`PasswordEncoder` declarado como `@Bean` en `SecurityConfig`) y nunca se devuelve.
 
 | Situación | Código |
 |-----------|--------|
 | Validación de campos (`@Valid`) | 400 |
 | Menor de 13 años | 400 |
+| Pedir `rol: ADMIN` en el registro | 400 |
 | Email o username ya usados | 409 |
 
 ### Login
@@ -432,19 +439,23 @@ fallo —email inexistente, contraseña incorrecta y **usuario dado de baja**—
 | Método | Ruta | Quién |
 |--------|------|-------|
 | GET | `/api/usuarios` | **`ADMIN`** |
+| GET | `/api/usuarios/me` | Autenticado: el del token |
+| GET | `/api/usuarios/me/productos` | Autenticado: tus publicaciones |
+| GET | `/api/usuarios/me/pedidos` | Autenticado: tu historial |
 | GET | `/api/usuarios/{id}` | Autenticado |
 | GET | `/api/usuarios/buscar?email=...` | Autenticado |
 | GET | `/api/usuarios/buscar?username=...` | Autenticado |
+| PUT | `/api/usuarios/{id}/roles` | **`ADMIN`**. Body: `{ "roles": ["VENDEDOR"] }` (reemplaza todos) |
 
 Hay que mandar **email o username** (uno de los dos). Sin ninguno → **400**. No existe → **404**.
 
 ### Productos del vendedor
 
-`GET /api/usuarios/{id}/productos` → lista de `ProductoResponse` (todos los del vendedor, no solo activos del catálogo público), o **204**. Requiere token. Usuario inexistente → **404**.
+`GET /api/usuarios/{id}/productos` o `GET /api/usuarios/me/productos` → lista de `ProductoResponse` (todos los del vendedor, no solo activos del catálogo público), o **204**. Requiere token. Usuario inexistente → **404**.
 
 ### Historial de pedidos
 
-`GET /api/usuarios/{id}/pedidos` → lista de `PedidoResponse`, del más nuevo al más viejo, o **204**.
+`GET /api/usuarios/{id}/pedidos` o `GET /api/usuarios/me/pedidos` → lista de `PedidoResponse`, del más nuevo al más viejo, o **204**.
 Es privado: solo lo ve **su dueño** (o un `ADMIN`) → **403** si es de otro. Usuario inexistente → **404**.
 
 ---
@@ -551,13 +562,15 @@ Requieren token, y además **ser el dueño del pedido** (un `ADMIN` puede ver cu
 |--------|------|-----------|
 | GET | `/api/pedidos/{id}` | **200** con el `PedidoResponse`; es la URL del header `Location` del checkout |
 | GET | `/api/pedidos/numero/{numero}` | **200**, busca por el número tipo `PED-1758300000000` |
-| GET | `/api/usuarios/{id}/pedidos` | **200** con el historial, o **204** si no compró nada |
+| GET | `/api/usuarios/{id}/pedidos` o `/api/usuarios/me/pedidos` | **200** con el historial, o **204** si no compró nada |
+| POST | `/api/pedidos/{id}/cancelar` | **200**: pasa a `CANCELADO` y **devuelve el stock**. Dueño o `ADMIN` |
 
 | Situación | Código |
 |-----------|--------|
 | Sin token | **401** |
 | El pedido es de otro usuario | **403** |
 | Pedido inexistente | 404 |
+| Pedido ya cancelado | 400 |
 
 ---
 
@@ -572,4 +585,5 @@ Requieren token, y además **ser el dueño del pedido** (un `ADMIN` puede ver cu
 7. `GET /api/productos` o `GET /api/categorias/{id}/productos` (catálogo, público)
 8. `POST /api/carritos/usuarios/{usuarioId}/items` → armar carrito (tiene que ser tu propio id)
 9. `POST /api/carritos/{id}/checkout` → **201** + pedido
-10. `GET /api/pedidos/{id}` → el pedido que apunta el header `Location`
+10. `GET /api/usuarios/me/pedidos` o `GET /api/pedidos/{id}` → el pedido
+11. `POST /api/pedidos/{id}/cancelar` → cancela y vuelve el stock (solo el dueño o un ADMIN)
