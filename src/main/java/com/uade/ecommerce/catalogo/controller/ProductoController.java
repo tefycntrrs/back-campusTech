@@ -55,6 +55,12 @@ public class ProductoController {
         return ResponseEntity.ok(productoService.getProductoPublico(id));
     }
 
+    //Cantidad de productos activos en el catálogo -> 200 con el numero
+    @GetMapping("/total")
+    public ResponseEntity<Long> getTotalActivos() {
+        return ResponseEntity.ok(productoService.getTotalActivos());
+    }
+
     //Crear un nuevo producto -> 201 Created + header Location. El vendedor es quien está logueado
     @PostMapping
     public ResponseEntity<ProductoResponse> createProducto(

@@ -49,6 +49,11 @@ public class ProductoService {
                 .toList();
     }
 
+    /** Cantidad de productos activos en el catálogo. */
+    public long getTotalActivos() {
+        return productoRepository.findByActivoTrueOrderByNombreAsc().size();
+    }
+
     /** Detalle público: un producto dado de baja (activo = false) se comporta como inexistente. */
     public ProductoResponse getProductoPublico(Long id) {
         Producto producto = buscarProducto(id);
