@@ -51,7 +51,20 @@ public class ProductoService {
 
     /** Cantidad de productos activos en el catálogo. */
     public long getTotalActivos() {
-        return productoRepository.findByActivoTrueOrderByNombreAsc().size();
+        return productoRepository.countByActivoTrue();
+    }
+
+    /** Busca en el catálogo por nombre (coincidencia parcial, sin distinguir mayúsculas). */
+    public List<ProductoResponse> buscarPorNombre(String texto) {
+        if (texto == null || texto.isBlank()) {
+            throw new ArgumentInvalidException("q", "El texto de búsqueda es obligatorio");
+        }
+
+        return productoRepository
+                .findByActivoTrueAndNombreContainingIgnoreCaseOrderByNombreAsc(texto.trim())
+                .stream()
+                .map(ProductoResponse::from)
+                .toList();
     }
 
     /** Detalle público: un producto dado de baja (activo = false) se comporta como inexistente. */

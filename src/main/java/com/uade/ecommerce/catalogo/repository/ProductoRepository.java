@@ -15,6 +15,12 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     //Catálogo público: solo productos activos, orden alfabético
     List<Producto> findByActivoTrueOrderByNombreAsc();
 
+    //Cantidad de productos activos (la cuenta la hace la base, no se traen las filas)
+    long countByActivoTrue();
+
+    //Búsqueda en el catálogo: activos cuyo nombre contenga el texto, sin importar mayúsculas
+    List<Producto> findByActivoTrueAndNombreContainingIgnoreCaseOrderByNombreAsc(String nombre);
+
     //Obtener todos los productos de una categoria.
     //La relación es N:N, así que se recorre la tabla intermedia producto_categorias
     //con un JOIN sobre la colección p.categorias en vez de comparar una FK.

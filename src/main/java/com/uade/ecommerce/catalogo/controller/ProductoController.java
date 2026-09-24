@@ -61,6 +61,19 @@ public class ProductoController {
         return ResponseEntity.ok(productoService.getTotalActivos());
     }
 
+    //Buscar productos por nombre -> 200 con resultados, 204 si no hay coincidencias
+    @GetMapping("/buscar")
+    public ResponseEntity<List<ProductoResponse>> buscarProductos(@RequestParam String q) {
+
+        List<ProductoResponse> productos = productoService.buscarPorNombre(q);
+
+        if (productos.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+        }
+
+        return ResponseEntity.ok(productos);
+    }
+
     //Crear un nuevo producto -> 201 Created + header Location. El vendedor es quien está logueado
     @PostMapping
     public ResponseEntity<ProductoResponse> createProducto(
